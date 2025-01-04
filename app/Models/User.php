@@ -20,11 +20,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'username',
-        'password',
-        'attempt',
-        'correct_answer',
-        'incorrect_answer',
+        'first_name',
+        'last_name',
+        'chat_id',
         'active',
+        'page'
     ];
 
     /**

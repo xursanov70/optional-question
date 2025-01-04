@@ -398,7 +398,7 @@ class QuestionController extends Controller
 
                 if (substr($line, -1) == '?' || (is_numeric(substr($line, 0, 2)) && strpos($line, '?'))) {
                     // Testni yaratish
-                    Test::create([
+                    Question::create([
                         'title' => $line,
                         'test_number' => $testCounter,
                         // 'key' => 'computer_arch'
@@ -409,7 +409,7 @@ class QuestionController extends Controller
                     $data['question'] = $line;
                     $testCounter++; // Keyingi test uchun test_number ni oshiramiz
                 } elseif (preg_match('/^a\)/', $line)) {
-                    $test = Test::whereNull('a_variant')->first();
+                    $test = Question::whereNull('a_variant')->first();
                     if ($test) {
                         $test->update([
                             'a_variant' => $line
@@ -417,7 +417,7 @@ class QuestionController extends Controller
                     }
                     $data['a_variant'] = $line;
                 } elseif (preg_match('/^b\)/', $line)) {
-                    $test = Test::whereNull('b_variant')->first();
+                    $test = Question::whereNull('b_variant')->first();
                     if ($test) {
                         $test->update([
                             'b_variant' => $line
@@ -425,7 +425,7 @@ class QuestionController extends Controller
                     }
                     $data['b_variant'] = $line;
                 } elseif (preg_match('/^c\)/', $line)) {
-                    $test = Test::whereNull('c_variant')->first();
+                    $test = Question::whereNull('c_variant')->first();
                     if ($test) {
                         $test->update([
                             'c_variant' => $line
@@ -433,7 +433,7 @@ class QuestionController extends Controller
                     }
                     $data['c_variant'] = $line;
                 } elseif (preg_match('/^d\)/', $line)) {
-                    $test = Test::whereNull('d_variant')->first();
+                    $test = Question::whereNull('d_variant')->first();
                     if ($test) {
                         $test->update([
                             'd_variant' => $line
@@ -442,7 +442,7 @@ class QuestionController extends Controller
                     $data['d_variant'] = $line;
                 } elseif (strpos($line, "Javob: ") === 0) {
                     $answer = trim(substr($line, strlen("Javob: ")));
-                    $test = Test::whereNull('correct_answer')->first();
+                    $test = Question::whereNull('correct_answer')->first();
                     if ($test) {
                         $test->update([
                             'correct_answer' => $answer
