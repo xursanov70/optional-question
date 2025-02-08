@@ -48,8 +48,8 @@
                     <button type="button" onclick="selectCategory('k_docx')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="k_docx">
                         <span class="text-sm sm:text-base">Komputer tarmoqlari</span>
                     </button>
-                    <button type="button" onclick="selectCategory('other')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="other">
-                        <span class="text-sm sm:text-base">Hayot faoliyati xavfsizligi</span>
+                    <button type="button" onclick="selectCategory('new_docx')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="new_docx">
+                        <span class="text-sm sm:text-base">Yangi komputer tarmoqlari</span>
                     </button>
                     <button type="button" onclick="selectCategory('signal')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="signal">
                         <span class="text-sm sm:text-base">Tizim va signallar</span>

@@ -48,9 +48,9 @@ class QuestionController extends Controller
         $endNumber = request('end_number');
         $key = request('test_category');
         $questions = Question::where('key', $key)
-        ->where('test_number', '>=', $startNumber)
-        ->where('test_number', '<=', $endNumber)
-        ->get();
+            ->where('test_number', '>=', $startNumber)
+            ->where('test_number', '<=', $endNumber)
+            ->get();
 
         $correctAnswers = $questions->pluck('correct_answer', 'id')->toArray();
 
@@ -76,7 +76,7 @@ class QuestionController extends Controller
     public function exportExcelData()
     {
         $questions = Question::where('key', 'k_docx')
-        ->get();
+            ->get();
         $writer = WriterEntityFactory::createXLSXWriter();
         $filePath = 'storage/reports/' . date('Y_m_d_H_i_s') . 'report.xlsx';
         $writer->openToFile($filePath);
@@ -357,6 +357,78 @@ class QuestionController extends Controller
     //     return response()->json(['success' => false, 'message' => 'File upload failed.']);
     // }
 
+    // public function importWordFile(Request $request)
+    // {
+    //     $file = $request->file('word_file');
+
+    //     if ($file->getClientOriginalExtension() !== 'docx') {
+    //         return response()->json(['success' => false, 'message' => 'Please upload a valid Word (.docx) file.']);
+    //     }
+
+    //     if ($file->isValid()) {
+    //         $filePath = $file->getPathname();
+    //         $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
+    //         $text = '';
+
+    //         foreach ($phpWord->getSections() as $section) {
+    //             foreach ($section->getElements() as $element) {
+    //                 if ($element instanceof \PhpOffice\PhpWord\Element\Text) {
+    //                     $text .= $element->getText() . "\n";
+    //                 } elseif ($element instanceof \PhpOffice\PhpWord\Element\TextRun) {
+    //                     foreach ($element->getElements() as $textElement) {
+    //                         if ($textElement instanceof \PhpOffice\PhpWord\Element\Text) {
+    //                             $text .= $textElement->getText();
+    //                         }
+    //                     }
+    //                     $text .= "\n";
+    //                 }
+    //             }
+    //         }
+
+    //         $lines = explode("\n", trim($text));
+    //         $currentQuestion = null;
+
+    //         foreach ($lines as $line) {
+    //             $line = trim($line);
+
+    //             if (empty($line)) continue;
+
+    //             if (substr($line, -1) === '?') {
+    //                 // Savolni yaratish
+    //                 $currentQuestion = Test::create([
+    //                     'title' => $line,
+    //                 ]);
+    //             }
+    //             if (preg_match('/^a\)/', $line) && $currentQuestion) {
+    //                 // A varianti
+    //                 $currentQuestion->update(['a_variant' => $line]);
+    //             }
+    //             if (preg_match('/^b\)/', $line) && $currentQuestion) {
+    //                 // B varianti
+    //                 $currentQuestion->update(['b_variant' => $line]);
+    //             }
+    //             if (preg_match('/^c\)/', $line) && $currentQuestion) {
+    //                 // C varianti
+    //                 $currentQuestion->update(['c_variant' => $line]);
+    //             }
+    //             if (preg_match('/^d\)/', $line) && $currentQuestion) {
+    //                 // D varianti
+    //                 $currentQuestion->update(['d_variant' => $line]);
+    //             }
+    //             if (strpos($line, "Javob: ") === 0 && $currentQuestion) {
+    //                 // To'g'ri javob
+    //                 $correctAnswer = trim(substr($line, strlen("Javob: ")));
+    //                 $currentQuestion->update(['correct_answer' => $correctAnswer]);
+    //             }
+    //         }
+
+    //         return response()->json(['success' => true, 'message' => 'Word file data imported successfully.']);
+    //     }
+
+    //     return response()->json(['success' => false, 'message' => 'Invalid file upload.']);
+    // }
+
+
     public function importWordFile(Request $request)
     {
         $file = $request->file('word_file');
@@ -403,7 +475,7 @@ class QuestionController extends Controller
                         'test_number' => $testCounter,
                         // 'key' => 'computer_arch'
                         // 'key' => 'k_docx'
-                        'key' => 'signal'
+                        'key' => 'new_docx'
                     ]);
 
                     $data['question'] = $line;
