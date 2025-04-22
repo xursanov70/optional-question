@@ -42,18 +42,18 @@
             <div class="flex flex-col space-y-4">
                 <label class="text-base sm:text-lg font-medium text-gold-light">Kategoriyani tanlang:</label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button type="button" onclick="selectCategory('computer_arch')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="computer_arch">
-                        <span class="text-sm sm:text-base">Kompyuter arxitekturasi</span>
+                    <button type="button" onclick="selectCategory('iqtisodiy_talim')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="iqtisodiy_talim">
+                        <span class="text-sm sm:text-base">Iqtisodiy ta'limotlar</span>
                     </button>
-                    <button type="button" onclick="selectCategory('k_docx')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="k_docx">
-                        <span class="text-sm sm:text-base">Komputer tarmoqlari</span>
+                    <button type="button" onclick="selectCategory('mikro_iqtisod')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="mikro_iqtisod">
+                        <span class="text-sm sm:text-base">Mikro iqtisodiyot</span>
                     </button>
-                    <button type="button" onclick="selectCategory('new_docx')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="new_docx">
-                        <span class="text-sm sm:text-base">Yangi komputer tarmoqlari</span>
+                    <button type="button" onclick="selectCategory('raqamli_iqtisod')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="raqamli_iqtisod">
+                        <span class="text-sm sm:text-base">Raqamli iqtisodiyot</span>
                     </button>
-                    <button type="button" onclick="selectCategory('signal')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="signal">
+                    {{-- <button type="button" onclick="selectCategory('signal')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="signal">
                         <span class="text-sm sm:text-base">Tizim va signallar</span>
-                    </button>
+                    </button> --}}
                 </div>
             </div>
 

@@ -155,280 +155,6 @@ class QuestionController extends Controller
     }
 
 
-    // public function importWordFile(Request $request)
-    // {
-    //     $file = $request->file('word_file');
-
-    //     if ($file->getClientOriginalExtension() !== 'docx') {
-    //         return response()->json(['success' => false, 'message' => 'Please upload a valid Word (.docx) file.']);
-    //     }
-
-    //     if ($file->isValid()) {
-    //         $filePath = $file->getPathname();
-    //         $phpWord = IOFactory::load($filePath);
-    //         $text = '';
-    //         $data = [];
-
-    //         foreach ($phpWord->getSections() as $section) {
-    //             foreach ($section->getElements() as $element) {
-    //                 if ($element instanceof Text) {
-    //                     $text .= $element->getText() . "\n";
-    //                 } elseif ($element instanceof TextRun) {
-    //                     foreach ($element->getElements() as $textElement) {
-    //                         if ($textElement instanceof Text) {
-    //                             $text .= $textElement->getText();
-    //                         }
-    //                     }
-    //                     $text .= "\n";
-    //                 }
-    //             }
-    //         }
-
-    //         $lines = explode("\n", $text);
-    //         $currentQuestion = '';
-    //         $variants = [];
-    //         $currentAnswer = '';
-    //         // return count($lines);
-
-    //         $data = [];
-
-
-
-
-
-    //         foreach ($lines as $line) {
-    //             // return $line;
-
-    //             // if (substr($line, -2) == '?') {
-    //             //     MakeTest::create([
-    //             //         'title' => $line
-    //             //     ]);
-    //             //     $data['question'] = $line;
-    //             // }
-    //             if (preg_match('/^a\)/', $line)) {
-    //                 $test = MakeTest::where('a_variant', null)->first();
-    //                 $test->update([
-    //                     'a_variant' => $line
-    //                 ]);
-    //                 $data['a_variant'] = $line;
-    //             } elseif (preg_match('/^b\)/', $line)) {
-    //                 $test = MakeTest::where('b_variant', null)->first();
-    //                 $test->update([
-    //                     'b_variant' => $line
-    //                 ]);
-
-    //                 $data['b_variant'] = $line;
-    //             } elseif (preg_match('/^c\)/', $line)) {
-    //                 MakeTest::whereNull('c_variant')->first()->update([
-    //                     'c_variant' => $line
-    //                 ]);
-    //                 $data['c_variant'] = $line;
-    //             } elseif (preg_match('/^d\)/', $line)) {
-    //                 MakeTest::whereNull('d_variant')->first()->update([
-    //                     'd_variant' => $line
-    //                 ]);
-    //                 $data['d_variant'] = $line;
-    //             } elseif (strpos($line, "Javob: ") === 0) {
-    //                 $answer = trim(substr($line, strlen("Javob: ")));
-    //                 MakeTest::whereNull('correct_answer')->first()->update([
-    //                     'correct_answer' => $answer
-    //                 ]);
-    //                 $data['correct_answer'] = $answer;
-    //             }
-
-
-
-    //             // if (preg_match('/^a\)/', $line)) {
-    //             //     $data['a_variant'] = $line;
-    //             // }
-    //             // elseif(preg_match('/^b\)/', $line)) {
-    //             //     $data['b_variant'] = $line;
-    //             // }
-    //             // }elseif(preg_match('/^c\)/', $line)) {
-    //             //     $data[] = [
-    //             //         'c_variant' => $line
-    //             //     ];
-    //             // }elseif(preg_match('/^d\)/', $line)) {
-    //             //     $data[] = [
-    //             //         'd_variant' => $line
-    //             //     ];
-    //             // }elseif (strpos($text, "Javob: ") === 0) { // Matnning boshlanishini tekshirish
-    //             //     $answer = trim(substr($text, strlen("Javob: "))); // "Javob: " so'zidan keyingi qismini olish
-    //             //     $data[] = [
-    //             //         'correct_answer' => $answer
-    //             //     ];
-    //             // }
-
-
-
-
-
-    //             // Str::after($line, 'a)');
-    //             // $b_variant = Str::between($line, 'b)', 'c)');
-    //             // $c_variant = Str::between($line, 'c)', 'd)');
-    //             // $d_variant = Str::between($line, 'd)', 'Javob:');
-    //             // $question = Str::before($line, '?');
-    //             // $correct_answer = Str::after($line, 'Javob: ');
-
-    //             // $a_variant = '';
-    //             // $b_variant = '';
-    //             // $c_variant = '';
-    //             // $d_variant = '';
-    //             // $correct_answer = '';
-
-    //             // if (Str::after($line, 'a)')){
-    //             //     $a_variant = $line;
-    //             // }elseif(Str::after($line, 'b)')){
-    //             //     $b_variant = $line;
-    //             // }elseif(Str::after($line, 'c)')){
-    //             //     $c_variant = $line;
-    //             // }elseif(Str::after($line, 'd)')){
-    //             //     $d_variant = $line;
-    //             // }elseif(Str::after($line, 'Javob: ')){
-    //             //     $correct_answer = Str::after($line, 'Javob: ');
-    //             // }else{
-
-    //             // }
-
-    //             // $data [] = [
-    //             //     'title' => "test",
-    //             //     'a_variant' => $a_variant,
-    //             //     'b_variant' => $b_variant,
-    //             //     'c_variant' => $c_variant,
-    //             //     'd_variant' => $d_variant,
-    //             //     'correct_answer' => $correct_answer,
-    //             // ];
-    //             // $a_variant = "\n";
-    //             // $b_variant = "\n";
-    //             // $c_variant = "\n";
-    //             // $d_variant = "\n";
-    //             // $correct_answer = "\n";
-
-    //             // $line = trim($line);
-    //             // if (empty($line)) continue;
-
-    //             // // Savol raqami va matnini ajratish
-    //             // if (preg_match('/^(\d+)\.\s*(.+?)\s+a$/', $line, $matches)) {
-    //             //     // Agar oldingi savol bo'lsa, uni saqlash
-    //             //     if (!empty($currentQuestion)) {
-    //             //         $data[] = [
-    //             //             'title' => $currentQuestion,
-    //             //             'a_variant' => $variants['a'] ?? '',
-    //             //             'b_variant' => $variants['b'] ?? '',
-    //             //             'c_variant' => $variants['c'] ?? '',
-    //             //             'd_variant' => $variants['d'] ?? '',
-    //             //             'correct_answer' => strtoupper($currentAnswer),
-    //             //             'key' => 'computer_arch'
-    //             //         ];
-    //             //     }
-
-    //             //     // Yangi savolni boshlash
-    //             //     $currentQuestion = $matches[2];
-    //             //     $variants = [];
-
-    //             //     // Variantlarni ajratish
-    //             //     preg_match('/a$\s*([^b]+)b$\s*([^c]+)c$\s*([^d]+)d$\s*([^\s]+)\s+Javob:\s*([a-d])/i', $line, $variantMatches);
-
-    //             //     if (count($variantMatches) > 0) {
-    //             //         $variants['a'] = trim($variantMatches[1]);
-    //             //         $variants['b'] = trim($variantMatches[2]);
-    //             //         $variants['c'] = trim($variantMatches[3]);
-    //             //         $variants['d'] = trim($variantMatches[4]);
-    //             //         $currentAnswer = trim($variantMatches[5]);
-    //             //     }
-    //             // }
-    //         }
-    //         // Oxirgi savolni qo'shish
-    //         // if (!empty($currentQuestion)) {
-    //         //     $data[] = [
-    //         //         'title' => $currentQuestion,
-    //         //         'a_variant' => $variants['a'] ?? '',
-    //         //         'b_variant' => $variants['b'] ?? '',
-    //         //         'c_variant' => $variants['c'] ?? '',
-    //         //         'd_variant' => $variants['d'] ?? '',
-    //         //         'correct_answer' => strtoupper($currentAnswer),
-    //         //         'key' => 'computer_arch'
-    //         //     ];
-    //         // }
-
-    //     }
-    //     return $data;
-
-    //     return response()->json(['success' => false, 'message' => 'File upload failed.']);
-    // }
-
-    // public function importWordFile(Request $request)
-    // {
-    //     $file = $request->file('word_file');
-
-    //     if ($file->getClientOriginalExtension() !== 'docx') {
-    //         return response()->json(['success' => false, 'message' => 'Please upload a valid Word (.docx) file.']);
-    //     }
-
-    //     if ($file->isValid()) {
-    //         $filePath = $file->getPathname();
-    //         $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
-    //         $text = '';
-
-    //         foreach ($phpWord->getSections() as $section) {
-    //             foreach ($section->getElements() as $element) {
-    //                 if ($element instanceof \PhpOffice\PhpWord\Element\Text) {
-    //                     $text .= $element->getText() . "\n";
-    //                 } elseif ($element instanceof \PhpOffice\PhpWord\Element\TextRun) {
-    //                     foreach ($element->getElements() as $textElement) {
-    //                         if ($textElement instanceof \PhpOffice\PhpWord\Element\Text) {
-    //                             $text .= $textElement->getText();
-    //                         }
-    //                     }
-    //                     $text .= "\n";
-    //                 }
-    //             }
-    //         }
-
-    //         $lines = explode("\n", trim($text));
-    //         $currentQuestion = null;
-
-    //         foreach ($lines as $line) {
-    //             $line = trim($line);
-
-    //             if (empty($line)) continue;
-
-    //             if (substr($line, -1) === '?') {
-    //                 // Savolni yaratish
-    //                 $currentQuestion = Test::create([
-    //                     'title' => $line,
-    //                 ]);
-    //             }
-    //             if (preg_match('/^a\)/', $line) && $currentQuestion) {
-    //                 // A varianti
-    //                 $currentQuestion->update(['a_variant' => $line]);
-    //             }
-    //             if (preg_match('/^b\)/', $line) && $currentQuestion) {
-    //                 // B varianti
-    //                 $currentQuestion->update(['b_variant' => $line]);
-    //             }
-    //             if (preg_match('/^c\)/', $line) && $currentQuestion) {
-    //                 // C varianti
-    //                 $currentQuestion->update(['c_variant' => $line]);
-    //             }
-    //             if (preg_match('/^d\)/', $line) && $currentQuestion) {
-    //                 // D varianti
-    //                 $currentQuestion->update(['d_variant' => $line]);
-    //             }
-    //             if (strpos($line, "Javob: ") === 0 && $currentQuestion) {
-    //                 // To'g'ri javob
-    //                 $correctAnswer = trim(substr($line, strlen("Javob: ")));
-    //                 $currentQuestion->update(['correct_answer' => $correctAnswer]);
-    //             }
-    //         }
-
-    //         return response()->json(['success' => true, 'message' => 'Word file data imported successfully.']);
-    //     }
-
-    //     return response()->json(['success' => false, 'message' => 'Invalid file upload.']);
-    // }
-
-
     public function importWordFile(Request $request)
     {
         $file = $request->file('word_file');
@@ -460,28 +186,28 @@ class QuestionController extends Controller
 
             $lines = explode("\n", trim($text)); // trim() qo'shildi
             $data = [];
-            $isFirstQuestion = true; // Birinchi savol uchun flag
             $testCounter = 1; // Testlarni hisoblashni 1 dan boshlaymiz
 
             foreach ($lines as $line) {
                 $line = trim($line); // Har bir qatorni trim qilish
+                $line = html_entity_decode($line, ENT_QUOTES | ENT_HTML5, 'UTF-8'); // Apostrofni to‘g‘rilash
 
                 if (empty($line)) continue; // Bo'sh qatorlarni o'tkazib yuborish
 
-                if (substr($line, -1) == '?' || (is_numeric(substr($line, 0, 2)) && strpos($line, '?'))) {
-                    // Testni yaratish
-                    Question::create([
+                if ((substr($line, -1) == '?' || substr($line, -1) == ':') || (is_numeric(substr($line, 0, 2)) && strpos($line, '?'))) {
+
+                    $line = substr($line, strpos($line, '.') + 1);
+                    Test::create([
                         'title' => $line,
                         'test_number' => $testCounter,
-                        // 'key' => 'computer_arch'
-                        // 'key' => 'k_docx'
-                        'key' => 'new_docx'
+                        'key' => 'raqamli_iqtisod'
                     ]);
 
                     $data['question'] = $line;
-                    $testCounter++; // Keyingi test uchun test_number ni oshiramiz
+                    $testCounter++; 
                 } elseif (preg_match('/^a\)/', $line)) {
-                    $test = Question::whereNull('a_variant')->first();
+                    $line = substr($line, 3);
+                    $test = Test::whereNull('a_variant')->first();
                     if ($test) {
                         $test->update([
                             'a_variant' => $line
@@ -489,7 +215,8 @@ class QuestionController extends Controller
                     }
                     $data['a_variant'] = $line;
                 } elseif (preg_match('/^b\)/', $line)) {
-                    $test = Question::whereNull('b_variant')->first();
+                    $line = substr($line, 3);
+                    $test = Test::whereNull('b_variant')->first();
                     if ($test) {
                         $test->update([
                             'b_variant' => $line
@@ -497,7 +224,8 @@ class QuestionController extends Controller
                     }
                     $data['b_variant'] = $line;
                 } elseif (preg_match('/^c\)/', $line)) {
-                    $test = Question::whereNull('c_variant')->first();
+                    $line = substr($line, 3);
+                    $test = Test::whereNull('c_variant')->first();
                     if ($test) {
                         $test->update([
                             'c_variant' => $line
@@ -505,7 +233,8 @@ class QuestionController extends Controller
                     }
                     $data['c_variant'] = $line;
                 } elseif (preg_match('/^d\)/', $line)) {
-                    $test = Question::whereNull('d_variant')->first();
+                    $line = substr($line, 3);
+                    $test = Test::whereNull('d_variant')->first();
                     if ($test) {
                         $test->update([
                             'd_variant' => $line
@@ -514,7 +243,7 @@ class QuestionController extends Controller
                     $data['d_variant'] = $line;
                 } elseif (strpos($line, "Javob: ") === 0) {
                     $answer = trim(substr($line, strlen("Javob: ")));
-                    $test = Question::whereNull('correct_answer')->first();
+                    $test = Test::whereNull('correct_answer')->first();
                     if ($test) {
                         $test->update([
                             'correct_answer' => $answer
@@ -529,106 +258,4 @@ class QuestionController extends Controller
     }
 
 
-
-
-    // public function importWordFile(Request $request)
-    // {
-    //     $file = $request->file('word_file');
-
-    //     if ($file->getClientOriginalExtension() !== 'docx') {
-    //         return response()->json(['success' => false, 'message' => 'Please upload a valid Word (.docx) file.']);
-    //     }
-
-    //     if ($file->isValid()) {
-    //         $filePath = $file->getPathname();
-    //         $phpWord = IOFactory::load($filePath);
-    //         $text = '';
-    //         $data = [];
-
-    //         foreach ($phpWord->getSections() as $section) {
-    //             foreach ($section->getElements() as $element) {
-    //                 if ($element instanceof Text) {
-    //                     return  $text .= $element->getText() . "\n";
-    //                 } elseif ($element instanceof TextRun) {
-    //                     foreach ($element->getElements() as $textElement) {
-    //                         if ($textElement instanceof Text) {
-    //                             $text .= $textElement->getText();
-    //                         }
-    //                     }
-    //                     $text .= "\n";
-    //                 }
-    //             }
-    //         }
-
-    //         $lines = explode("\n", $text);
-    //         $currentQuestion = '';
-    //         $currentAnswer = '';
-    //         $expectedQuestionNumber = 1;
-
-    //         foreach ($lines as $line) {
-    //             $line = trim($line);
-    //             if (empty($line)) continue;
-
-    //             if (preg_match('/^(\d+)\./', $line, $matches)) {
-    //                 $questionNumber = intval($matches[1]);
-
-    //                 // Save the previous question if it exists
-    //                 if (!empty($currentQuestion)) {
-    //                     $data[] = [
-    //                         'title' => $currentQuestion,
-    //                         'correct_answer' => $currentAnswer,
-    //                         // 'question_number' => $expectedQuestionNumber - 1
-    //                         'key' => 'computer_arch'
-    //                     ];
-    //                     $currentQuestion = '';
-    //                     $currentAnswer = '';
-    //                 }
-
-    //                 // Check if the question number is as expected
-    //                 if ($questionNumber !== $expectedQuestionNumber) {
-    //                     // Log a warning or handle the discrepancy as needed
-    //                     Log::warning("Question number mismatch. Expected: $expectedQuestionNumber, Found: $questionNumber");
-    //                 }
-
-    //                 $currentQuestion = $line;
-    //                 $expectedQuestionNumber = $questionNumber + 1;
-    //             } elseif (str_starts_with(strtolower($line), 'javob:')) {
-    //                 // This is an answer
-    //                 $currentAnswer = trim(substr($line, 6)); // Remove "Javob:" from the beginning
-    //             } elseif (!empty($currentQuestion)) {
-    //                 // This is a continuation of the question
-    //                 $currentQuestion .= ' ' . $line;
-    //             }
-    //         }
-
-    //         // Add the last question if it exists
-    //         if (!empty($currentQuestion)) {
-    //             $data[] = [
-    //                 'title' => $currentQuestion,
-    //                 'correct_answer' => $currentAnswer,
-    //                 // 'question_number' => $expectedQuestionNumber - 1,
-    //                 'key' => 'computer_arch'
-    //             ];
-    //         }
-    //         return $data;
-    //         // foreach($data as $da){
-    //         //     TestQuestion::create([
-    //         //         'title' => $da['title'],
-    //         //         'correct_answer' => $da['correct_answer'],
-    //         //         'key' => 'computer_arch'
-    //         //     ]);
-    //         // }
-    //         return 'ok';
-    //         // // Insert into TestQuestion table
-    //         // TestQuestion::insert($data);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Questions loaded from Word file!',
-    //             'count' => count($data)
-    //         ]);
-    //     }
-
-    //     return response()->json(['success' => false, 'message' => 'File upload failed.']);
-    // }
 }
