@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Telegram;
 
+use App\Models\CheckUser;
 use App\Models\User;
 use DefStudio\Telegraph\Handlers\WebhookHandler;
 use DefStudio\Telegraph\Keyboard\Button;
@@ -22,7 +23,24 @@ class TelegramHandler extends WebhookHandler
             $this->createUser($chatId, $firstName, $username, $lastName);
         }
 
-        $this->chat->message('Assalamu alaykum '. $firstName . ', Botimizga xush kelibsiz!')
+        if (!$this->checkUser($chatId)) {
+            // Xabar yuboriladi + mavjud tugmalarni tozalash uchun bo'sh klaviatura
+            $this->chat->message("Assalamu alaykum $firstName, Kechirasiz, botdan foydalana olmaysiz!")
+            ->replyKeyboard(
+                ReplyKeyboard::make()
+                    ->button("Telegram ma'lumotlarim 📲")
+                    ->button("Admin bilan aloqa 📞")
+                    ->button('Ulashish 📮')
+                    ->button('Test yechish 📄')
+                    ->chunk(2)
+                    ->inputPlaceholder("Assalamu alaykum...")
+                    ->resize()
+            )->send();
+            return;
+        }
+    
+        // Agar foydalanuvchiga ruxsat bo‘lsa - tugmalar ko‘rsatiladi
+        $this->chat->message('Assalamu alaykum ' . $firstName . ', Botimizga xush kelibsiz!')
             ->replyKeyboard(
                 ReplyKeyboard::make()
                     ->button("Telegram ma'lumotlarim 📲")
@@ -35,28 +53,36 @@ class TelegramHandler extends WebhookHandler
             )->send();
     }
 
+    private function checkUser($chatId): bool
+    {
+       return CheckUser::where("chat_id", $chatId)->where("active", true)->first() ? true : false;
+    }
+
     public function handleChatMessage(Stringable $text): void
     {
         if (!$this->message && !$this->callbackQuery) {
             $this->chat->message('Xatolik yuz berdi!')->send();
             return;
         }
-            $firstName = $this->message->from()->firstName();
-            $username = $this->message->from()->username();
-            $lastName = $this->message->from()->lastName();
-            $chatId = $this->message->from()->id();
-
-        switch ($text) {
-            case "Telegram ma'lumotlarim 📲":
-                $this->reply($this->getInfo($chatId, $username, $firstName));
-                break;
-            case "Admin bilan aloqa 📞":
-                $this->reply($this->admin());
-                break;
-            case "Ulashish 📮":
-                $this->share($this->chat);
-                break;
-        }
+        $firstName = $this->message->from()->firstName();
+        $username = $this->message->from()->username();
+        $lastName = $this->message->from()->lastName();
+        $chatId = $this->message->from()->id();
+        if (!$this->checkUser($chatId)) {
+            $this->reply('Assalamu alaykum ' . $firstName . ', Kechirasiz botdan foydalana olmaysiz!');
+        }else{
+            switch ($text) {
+                case "Telegram ma'lumotlarim 📲":
+                    $this->reply($this->getInfo($chatId, $username, $firstName));
+                    break;
+                case "Admin bilan aloqa 📞":
+                    $this->reply($this->admin());
+                    break;
+                case "Ulashish 📮":
+                    $this->share($this->chat);
+                    break;
+            }
+        } 
     }
 
     public function share($chat)
