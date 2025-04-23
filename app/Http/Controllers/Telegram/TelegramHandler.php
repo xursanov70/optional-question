@@ -25,13 +25,13 @@ class TelegramHandler extends WebhookHandler
 
         if (!$this->checkUser($chatId)) {
             // Xabar yuboriladi + mavjud tugmalarni tozalash uchun bo'sh klaviatura
-            $this->chat->message("Assalamu alaykum $firstName, Kechirasiz, botdan foydalana olmaysiz!")
+            $this->chat->message("Assalamu alaykum $firstName, Iltimos, Telegram ma'lumotlarim tugmasini bosib ID raqamingizni adminga yuboring \n va qayta kelib /start buyrug'ini bosing!")
                 ->replyKeyboard(
                     ReplyKeyboard::make()
                         ->button("Telegram ma'lumotlarim 📲")
-                        ->button("Admin bilan aloqa 📞")
-                        ->button('Ulashish 📮')
-                        ->button('Test yechish 📄')
+                        // ->button("Admin bilan aloqa 📞")
+                        // ->button('Ulashish 📮')
+                        // ->button('Test yechish 📄')
                         ->chunk(2)
                         ->inputPlaceholder("Assalamu alaykum...")
                         ->resize()
@@ -74,14 +74,19 @@ class TelegramHandler extends WebhookHandler
         // Foydalanuvchi ma'lumotlarini yaratish
         $this->createUser($chatId, $firstName, $username, $lastName);
 
+        if ($text == "Telegram ma'lumotlarim 📲"){
+            $this->reply($this->getInfo($chatId, $username, $firstName));
+            return;
+        }
+
         if (!$this->checkUser($chatId)) {
-            $this->chat->message("Assalamu alaykum $firstName, Kechirasiz, botdan foydalana olmaysiz!")
+            $this->chat->message("Assalamu alaykum $firstName, Iltimos, Telegram ma'lumotlarim tugmasini bosib, ID raqamingizni adminga yuboring \nva qayta kelib /start buyrug'ini bosing!")
                 ->replyKeyboard(
                     ReplyKeyboard::make()
                         ->button("Telegram ma'lumotlarim 📲")
-                        ->button("Admin bilan aloqa 📞")
-                        ->button('Ulashish 📮')
-                        ->button('Test yechish 📄')
+                        // ->button("Admin bilan aloqa 📞")
+                        // ->button('Ulashish 📮')
+                        // ->button('Test yechish 📄')
                         ->chunk(2)
                         ->inputPlaceholder("Assalamu alaykum...")
                         ->resize()
@@ -91,9 +96,9 @@ class TelegramHandler extends WebhookHandler
 
         // Foydalanuvchi ruxsatli bo'lsa, xabar matniga qarab harakat
         switch ($text) {
-            case "Telegram ma'lumotlarim 📲":
-                $this->reply($this->getInfo($chatId, $username, $firstName));
-                break;
+            // case "Telegram ma'lumotlarim 📲":
+            //     $this->reply($this->getInfo($chatId, $username, $firstName));
+            //     break;
             case "Admin bilan aloqa 📞":
                 $this->reply($this->admin());
                 break;
