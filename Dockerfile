@@ -1,4 +1,3 @@
-# PHP 8.2 asosidagi image
 FROM php:8.2-fpm
 
 # Kerakli PHP kengaytmalar va asboblar o'rnatiladi
@@ -11,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    libsqlite3-dev \
+    && docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip
 
 # Composer o'rnatish
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -38,7 +38,8 @@ RUN composer install --optimize-autoloader --no-dev \
 
 # Huquqlarni sozlash
 RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 775 /var/www/storage /var/www/database
 
 # PHP-FPM porti
 EXPOSE 9000
