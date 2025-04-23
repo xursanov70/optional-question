@@ -51,9 +51,12 @@
                     <button type="button" onclick="selectCategory('raqamli_iqtisod')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="raqamli_iqtisod">
                         <span class="text-sm sm:text-base">Raqamli iqtisodiyot</span>
                     </button>
-                    {{-- <button type="button" onclick="selectCategory('signal')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="signal">
-                        <span class="text-sm sm:text-base">Tizim va signallar</span>
-                    </button> --}}
+                    <button type="button" onclick="selectCategory('iqtisodiy_siyosat')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="iqtisodiy_siyosat">
+                        <span class="text-sm sm:text-base">Iqtisodiy siyosat</span>
+                    </button>
+                    <button type="button" onclick="selectCategory('iqtisodiy_rivojlanish')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="iqtisodiy_rivojlanish">
+                        <span class="text-sm sm:text-base">Iqtisodiy rivojlanish</span>
+                    </button>
                 </div>
             </div>
 
