@@ -22,6 +22,8 @@ class TelegramHandler extends WebhookHandler
             $chatId = $this->message->from()->id();
             $this->createUser($chatId, $firstName, $username, $lastName);
         }
+        $admin = $this->getAdmin($chatId);
+
 
         if (!$this->checkUser($chatId)) {
             // Xabar yuboriladi + mavjud tugmalarni tozalash uchun bo'sh klaviatura
@@ -48,6 +50,8 @@ class TelegramHandler extends WebhookHandler
                     ->button("Admin bilan aloqa 📞")
                     ->button('Ulashish 📮')
                     ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
+                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq berish"))
+                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq olish"))
                     ->chunk(2)
                     ->inputPlaceholder("Assalamu alaykum...")
                     ->resize()
@@ -74,9 +78,62 @@ class TelegramHandler extends WebhookHandler
         // Foydalanuvchi ma'lumotlarini yaratish
         $this->createUser($chatId, $firstName, $username, $lastName);
 
-        if ($text == "Telegram ma'lumotlarim 📲"){
+        if ($text == "Telegram ma'lumotlarim 📲") {
             $this->reply($this->getInfo($chatId, $username, $firstName));
             return;
+        }
+        $admin = $this->getAdmin($chatId);
+
+        $userPage = User::where("chat_id", $chatId)
+            ->where("active", true)
+            ->first();
+        if ($userPage->page == User::ADD_RULE_PAGE) {
+            $user = User::where('chat_id', $text)->first();
+            if (!$user) {
+                $this->reply("Botga start bosmagan userga huquq bera olmaysiz!");
+                $userPage->update([
+                    "page" => User::HOME_PAGE
+                ]);
+                return;
+            }
+            $checkUser =  CheckUser::where("chat_id", $text)->first();
+            if (!$checkUser) {
+                CheckUser::create([
+                    "chat_id" => $text
+                ]);
+            } else {
+                $checkUser->update([
+                    "active" => true
+                ]);
+            }
+            $userPage->update([
+                "page" => User::HOME_PAGE
+            ]);
+            $this->reply("Huquq muvafaqqiyatli berildi!");
+        } elseif ($userPage->page == User::REMOVE_RULE_PAGE) {
+            $user = User::where('chat_id', $text)->first();
+            if (!$user) {
+                $this->reply("Botga start bosmagan userdan huquq ololmaysiz!");
+                $userPage->update([
+                    "page" => User::HOME_PAGE
+                ]);
+                return;
+            }
+            $checkUser =  CheckUser::where("chat_id", $text)->first();
+            if (!$checkUser) {
+                CheckUser::create([
+                    "chat_id" => $text,
+                    "active" => false
+                ]);
+            } else {
+                $checkUser->update([
+                    "active" => false
+                ]);
+            }
+            $userPage->update([
+                "page" => User::HOME_PAGE
+            ]);
+            $this->reply("Huquq muvafaqqiyatli olindi!");
         }
 
         if (!$this->checkUser($chatId)) {
@@ -96,9 +153,12 @@ class TelegramHandler extends WebhookHandler
 
         // Foydalanuvchi ruxsatli bo'lsa, xabar matniga qarab harakat
         switch ($text) {
-            // case "Telegram ma'lumotlarim 📲":
-            //     $this->reply($this->getInfo($chatId, $username, $firstName));
-            //     break;
+            case "Huquq berish":
+                $this->addedRule($chatId);
+                break;
+            case "Huquq olish":
+                $this->removeRule($chatId);
+                break;
             case "Admin bilan aloqa 📞":
                 $this->reply($this->admin());
                 break;
@@ -118,12 +178,59 @@ class TelegramHandler extends WebhookHandler
                             ->button("Admin bilan aloqa 📞")
                             ->button('Ulashish 📮')
                             ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
+                            ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq berish"))
+                            ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq olish"))
                             ->chunk(2)
                             ->inputPlaceholder("Assalamu alaykum...")
                             ->resize()
                     )->send();
                 break;
         }
+    }
+
+    private function getUserPage($chatId)
+    {
+        return User::where("chat_id", $chatId)
+            ->where("active", true)
+            ->first();
+    }
+
+    private function getAdmin($chatId)
+    {
+        return User::where("chat_id", $chatId)
+            ->where("active", true)
+            ->where("admin", true)
+            ->first() ? true : false;
+    }
+
+    private function addedRule($chatId)
+    {
+        $user =  User::where('chat_id', $chatId)
+            ->where('admin', true)
+            ->first();
+        if (!$user) {
+            $this->reply("Sizda bunday huquq mavjud emas!");
+            return;
+        }
+        $user->update([
+            "page" => User::ADD_RULE_PAGE
+        ]);
+        $this->reply("Iltimos, foydalanuvchi ID raqamini kiriting");
+    }
+
+    private function removeRule($chatId)
+    {
+        $user =  User::where('chat_id', $chatId)
+            ->where('admin', true)
+            ->first();
+        if (!$user) {
+            $this->reply("Sizda bunday huquq mavjud emas!");
+            return;
+        }
+        $user->update([
+            "page" => User::REMOVE_RULE_PAGE
+        ]);
+        $this->reply("Iltimos, foydalanuvchi ID raqamini kiriting");
     }
 
     public function share($chat)

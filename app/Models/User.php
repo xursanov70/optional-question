@@ -12,6 +12,9 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
+    const ADD_RULE_PAGE = 2;
+    const HOME_PAGE = 1;
+    const REMOVE_RULE_PAGE = 3;
 
     /**
      * The attributes that are mass assignable.
