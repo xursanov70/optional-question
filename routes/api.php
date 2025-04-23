@@ -10,3 +10,4 @@ Route::get('/user', function (Request $request) {
 
 Route::post('import/word-file', [QuestionController::class, 'importWordFile']);
 Route::post('export/excel-data', [QuestionController::class, 'exportExcelData']);
+Route::post('test', [QuestionController::class, 'test']);

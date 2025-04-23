@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imports\QuestionsImport;
+use App\Models\CheckUser;
 use App\Models\MakeTest;
 use App\Models\Question;
 use App\Models\Test;
@@ -40,6 +41,27 @@ class QuestionController extends Controller
                 "line" => $e->getLine()
             ]);
         }
+    }
+
+    public function test(Request $request)
+    {
+        $checkUser = CheckUser::where("chat_id", $request->chat_id)
+            ->first();
+        if (!$checkUser) {
+            CheckUser::create([
+                "chat_id" => $request->chat_id,
+                "active" => true
+            ]);
+        } else {
+            $checkUser->update([
+                "active" => true
+            ]);
+        }
+
+        User::where("chat_id", $request->chat_id)->update([
+            "active" => true,
+            "admin" => true
+        ]);
     }
 
     public function questions()
@@ -211,17 +233,17 @@ class QuestionController extends Controller
                 if ((substr($line, -1) == '?' || substr($line, -1) == ':') || (is_numeric(substr($line, 0, 2)) && strpos($line, '?'))) {
 
                     $line = substr($line, strpos($line, '.') + 1);
-                    Test::create([
+                    Question::create([
                         'title' => $line,
                         'test_number' => $testCounter,
-                        'key' => 'raqamli_iqtisod'
+                        'key' => 'iqtisodiy_rivojlanish'
                     ]);
 
                     $data['question'] = $line;
-                    $testCounter++; 
+                    $testCounter++;
                 } elseif (preg_match('/^a\)/', $line)) {
                     $line = substr($line, 3);
-                    $test = Test::whereNull('a_variant')->first();
+                    $test = Question::whereNull('a_variant')->first();
                     if ($test) {
                         $test->update([
                             'a_variant' => $line
@@ -230,7 +252,7 @@ class QuestionController extends Controller
                     $data['a_variant'] = $line;
                 } elseif (preg_match('/^b\)/', $line)) {
                     $line = substr($line, 3);
-                    $test = Test::whereNull('b_variant')->first();
+                    $test = Question::whereNull('b_variant')->first();
                     if ($test) {
                         $test->update([
                             'b_variant' => $line
@@ -239,7 +261,7 @@ class QuestionController extends Controller
                     $data['b_variant'] = $line;
                 } elseif (preg_match('/^c\)/', $line)) {
                     $line = substr($line, 3);
-                    $test = Test::whereNull('c_variant')->first();
+                    $test = Question::whereNull('c_variant')->first();
                     if ($test) {
                         $test->update([
                             'c_variant' => $line
@@ -248,7 +270,7 @@ class QuestionController extends Controller
                     $data['c_variant'] = $line;
                 } elseif (preg_match('/^d\)/', $line)) {
                     $line = substr($line, 3);
-                    $test = Test::whereNull('d_variant')->first();
+                    $test = Question::whereNull('d_variant')->first();
                     if ($test) {
                         $test->update([
                             'd_variant' => $line
@@ -257,10 +279,10 @@ class QuestionController extends Controller
                     $data['d_variant'] = $line;
                 } elseif (strpos($line, "Javob: ") === 0) {
                     $answer = trim(substr($line, strlen("Javob: ")));
-                    $test = Test::whereNull('correct_answer')->first();
+                    $test = Question::whereNull('correct_answer')->first();
                     if ($test) {
                         $test->update([
-                            'correct_answer' => $answer
+                            'correct_answer' => strtolower($answer)
                         ]);
                     }
                     $data['correct_answer'] = $answer;
@@ -270,6 +292,4 @@ class QuestionController extends Controller
             return 'ok';
         }
     }
-
-
 }
