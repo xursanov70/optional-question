@@ -26,19 +26,20 @@ class TelegramHandler extends WebhookHandler
         if (!$this->checkUser($chatId)) {
             // Xabar yuboriladi + mavjud tugmalarni tozalash uchun bo'sh klaviatura
             $this->chat->message("Assalamu alaykum $firstName, Kechirasiz, botdan foydalana olmaysiz!")
-            ->replyKeyboard(
-                ReplyKeyboard::make()
-                    ->button("Telegram ma'lumotlarim 📲")
-                    ->button("Admin bilan aloqa 📞")
-                    ->button('Ulashish 📮')
-                    ->button('Test yechish 📄')
-                    ->chunk(2)
-                    ->inputPlaceholder("Assalamu alaykum...")
-                    ->resize()
-            )->send();
+                ->replyKeyboard(
+                    ReplyKeyboard::make()
+                        ->button("Telegram ma'lumotlarim 📲")
+                        ->button("Admin bilan aloqa 📞")
+                        ->button('Ulashish 📮')
+                        ->button('Test yechish 📄')
+                        ->chunk(2)
+                        ->inputPlaceholder("Assalamu alaykum...")
+                        ->resize()
+                )->send();
             return;
         }
-    
+        $url = env('APP_URL');
+
         // Agar foydalanuvchiga ruxsat bo‘lsa - tugmalar ko‘rsatiladi
         $this->chat->message('Assalamu alaykum ' . $firstName . ', Botimizga xush kelibsiz!')
             ->replyKeyboard(
@@ -46,7 +47,7 @@ class TelegramHandler extends WebhookHandler
                     ->button("Telegram ma'lumotlarim 📲")
                     ->button("Admin bilan aloqa 📞")
                     ->button('Ulashish 📮')
-                    ->button('Test yechish 📄')->webApp(env('APP_URL'))
+                    ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
                     ->chunk(2)
                     ->inputPlaceholder("Assalamu alaykum...")
                     ->resize()
@@ -55,7 +56,7 @@ class TelegramHandler extends WebhookHandler
 
     private function checkUser($chatId): bool
     {
-       return CheckUser::where("chat_id", $chatId)->where("active", true)->first() ? true : false;
+        return CheckUser::where("chat_id", $chatId)->where("active", true)->first() ? true : false;
     }
 
     public function handleChatMessage(Stringable $text): void
@@ -64,25 +65,60 @@ class TelegramHandler extends WebhookHandler
             $this->chat->message('Xatolik yuz berdi!')->send();
             return;
         }
+
         $firstName = $this->message->from()->firstName();
         $username = $this->message->from()->username();
         $lastName = $this->message->from()->lastName();
         $chatId = $this->message->from()->id();
+
+        // Foydalanuvchi ma'lumotlarini yaratish
+        $this->createUser($chatId, $firstName, $username, $lastName);
+
         if (!$this->checkUser($chatId)) {
-            $this->reply('Assalamu alaykum ' . $firstName . ', Kechirasiz botdan foydalana olmaysiz!');
-        }else{
-            switch ($text) {
-                case "Telegram ma'lumotlarim 📲":
-                    $this->reply($this->getInfo($chatId, $username, $firstName));
-                    break;
-                case "Admin bilan aloqa 📞":
-                    $this->reply($this->admin());
-                    break;
-                case "Ulashish 📮":
-                    $this->share($this->chat);
-                    break;
-            }
-        } 
+            $this->chat->message("Assalamu alaykum $firstName, Kechirasiz, botdan foydalana olmaysiz!")
+                ->replyKeyboard(
+                    ReplyKeyboard::make()
+                        ->button("Telegram ma'lumotlarim 📲")
+                        ->button("Admin bilan aloqa 📞")
+                        ->button('Ulashish 📮')
+                        ->button('Test yechish 📄')
+                        ->chunk(2)
+                        ->inputPlaceholder("Assalamu alaykum...")
+                        ->resize()
+                )->send();
+            return;
+        }
+
+        // Foydalanuvchi ruxsatli bo'lsa, xabar matniga qarab harakat
+        switch ($text) {
+            case "Telegram ma'lumotlarim 📲":
+                $this->reply($this->getInfo($chatId, $username, $firstName));
+                break;
+            case "Admin bilan aloqa 📞":
+                $this->reply($this->admin());
+                break;
+            case "Ulashish 📮":
+                $this->share($this->chat);
+                break;
+            case "Test yechish 📄":
+                if (!$this->checkUser($chatId)) {
+                    $this->chat->message("Kechirasiz, test yechish uchun foydalanish taqiqlangan!")->send();
+                    return;
+                }
+                $url = env('APP_URL');
+                $this->chat->message('Iltimos, qaytadan Test yechish tugmasini bosing!')
+                    ->replyKeyboard(
+                        ReplyKeyboard::make()
+                            ->button("Telegram ma'lumotlarim 📲")
+                            ->button("Admin bilan aloqa 📞")
+                            ->button('Ulashish 📮')
+                            ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
+                            ->chunk(2)
+                            ->inputPlaceholder("Assalamu alaykum...")
+                            ->resize()
+                    )->send();
+                break;
+        }
     }
 
     public function share($chat)

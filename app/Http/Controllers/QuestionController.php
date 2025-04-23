@@ -47,6 +47,20 @@ class QuestionController extends Controller
         $startNumber = request('start_number');
         $endNumber = request('end_number');
         $key = request('test_category');
+
+        $chatId = request('chat_id');
+
+        // check_users jadvalida chat_id ni tekshirish
+        $userExists = DB::table('check_users')
+            ->where('chat_id', $chatId)
+            ->where('active', true)
+            ->exists();
+
+        // Agar chat_id mavjud bo'lmasa, 404 sahifasini qaytarish
+        if (!$userExists && $chatId) {
+            abort(404, 'Foydalanuvchi topilmadi');
+        }
+
         $questions = Question::where('key', $key)
             ->where('test_number', '>=', $startNumber)
             ->where('test_number', '<=', $endNumber)

@@ -70,40 +70,47 @@
     </div>
 
     <script>
-    function selectCategory(category) {
-        // Set the selected category in the hidden input
-        document.getElementById('categoryInput').value = category;
-
-        // Reset all buttons to their original color
-        document.querySelectorAll('.category-btn').forEach(btn => {
-            btn.classList.remove('ring-2', 'ring-gold', 'bg-black');
-            btn.classList.add('bg-gradient-to-r', 'from-gold', 'to-gold-dark', 'text-black', 'hover:from-gold-dark', 'hover:to-gold');
-        });
-
-        // Change the color of the selected button
-        const selectedBtn = document.querySelector(`[data-category="${category}"]`);
-        selectedBtn.classList.remove('bg-gradient-to-r', 'from-gold', 'to-gold-dark', 'text-black', 'hover:from-gold-dark', 'hover:to-gold');
-        selectedBtn.classList.add('ring-2', 'ring-gold', 'bg-black', 'text-gold');
-    }
-
-    document.getElementById('testForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const rangeMin = document.getElementById('rangeMin').value;
-        const rangeMax = document.getElementById('rangeMax').value;
-        const category = document.getElementById('categoryInput').value;
-
-        if (!rangeMin || !rangeMax || !category) {
-            alert('Iltimos, barcha maydonlarni to\'ldiring');
-            return;
+        function selectCategory(category) {
+            // Set the selected category in the hidden input
+            document.getElementById('categoryInput').value = category;
+        
+            // Reset all buttons to their original color
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-gold', 'bg-black');
+                btn.classList.add('bg-gradient-to-r', 'from-gold', 'to-gold-dark', 'text-black', 'hover:from-gold-dark', 'hover:to-gold');
+            });
+        
+            // Change the color of the selected button
+            const selectedBtn = document.querySelector(`[data-category="${category}"]`);
+            selectedBtn.classList.remove('bg-gradient-to-r', 'from-gold', 'to-gold-dark', 'text-black', 'hover:from-gold-dark', 'hover:to-gold');
+            selectedBtn.classList.add('ring-2', 'ring-gold', 'bg-black', 'text-gold');
         }
-
-        const betweenCount = [`${rangeMin},${rangeMax}`];
-        const url = `/questions?start_number=${rangeMin}&end_number=${rangeMax}&test_category=${category}`;
-
-        window.location.href = url;
-    });
-    </script>
+        
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+        
+            const rangeMin = document.getElementById('rangeMin').value;
+            const rangeMax = document.getElementById('rangeMax').value;
+            const category = document.getElementById('categoryInput').value;
+        
+            if (!rangeMin || !rangeMax || !category) {
+                alert('Iltimos, barcha maydonlarni to\'ldiring');
+                return;
+            }
+        
+            // Joriy URL'dan chat_id ni olish
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatId = urlParams.get('chat_id');
+        
+            // URL'ni shakllantirish
+            let url = `/questions?start_number=${rangeMin}&end_number=${rangeMax}&test_category=${category}`;
+            if (chatId) {
+                url += `&chat_id=${chatId}`;
+            }
+        
+            window.location.href = url;
+        });
+        </script>
 </body>
 </html>
 
