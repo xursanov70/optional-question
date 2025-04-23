@@ -1,4 +1,4 @@
-# PHP 8.2 asosidagi image
+# Asosiy PHP 8.2-fpm imageni
 FROM php:8.2-fpm
 
 # Kerakli PHP kengaytmalar va asboblar o'rnatiladi
@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    libsqlite3-dev \
+    && docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* # Keshni tozalash
 
 # Composer o'rnatish
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -19,7 +21,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Node.js va npm o'rnatish (frontend uchun)
 RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g npm
+    && npm install -g npm \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # jprq o'rnatish
 RUN curl -fsSL https://jprq.io/jprq-linux-amd64 -o /usr/local/bin/jprq \
@@ -29,7 +32,7 @@ RUN curl -fsSL https://jprq.io/jprq-linux-amd64 -o /usr/local/bin/jprq \
 WORKDIR /var/www
 
 # Loyiha fayllarini ko'chirish
-COPY . .
+COPY --chown=www-data:www-data . /var/www
 
 # Composer va npm paketlarini o'rnatish
 RUN composer install --optimize-autoloader --no-dev \
@@ -38,9 +41,11 @@ RUN composer install --optimize-autoloader --no-dev \
 
 # Huquqlarni sozlash
 RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+    && chmod -R 755 /var/www \
+    && chmod -R 775 /var/www/storage /var/www/database
 
 # PHP-FPM porti
 EXPOSE 9000
 
+# PHP-FPM ishga tushirish
 CMD ["php-fpm"]
