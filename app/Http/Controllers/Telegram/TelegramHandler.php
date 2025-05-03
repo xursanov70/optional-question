@@ -6,12 +6,14 @@ use App\Models\CheckUser;
 use App\Models\Question;
 use App\Models\Test;
 use App\Models\User;
+use Carbon\Carbon;
 use DefStudio\Telegraph\Facades\Telegraph;
 use DefStudio\Telegraph\Handlers\WebhookHandler;
 use DefStudio\Telegraph\Keyboard\Button;
 use DefStudio\Telegraph\Keyboard\Keyboard;
 use DefStudio\Telegraph\Keyboard\ReplyKeyboard;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Stringable;
@@ -92,10 +94,10 @@ class TelegramHandler extends WebhookHandler
                 $this->standartTest($chatId);
                 break;
             case "👑 Avto guruh 👑":
-                $this->share($this->chat);
+                $this->reply("Ushbu bo'limdan foydalanish sozlanmagan!");
                 break;
             case "👑 Mavzulashtirilgan testlar 👑":
-                $this->share($this->chat);
+                $this->reply("Ushbu bo'limdan foydalanish sozlanmagan!");
                 break;
             case "💳 Obuna 💳":
                 $this->subscribe();
@@ -189,49 +191,55 @@ class TelegramHandler extends WebhookHandler
 
     private function sendQuestion($chatId, $question, $questionNumber)
     {
-        $message = "📝 $questionNumber - savol: " . $question->title . "\n\n";
-        $rows = [];
+        try {
+            $message = "📝 $questionNumber - savol: " . $question->title . "\n\n";
+            $rows = [];
 
-        if ($question->a_variant) {
-            $message .= "a) " . $question->a_variant . "\n";
-            $rows[] = Button::make('a')->action('answerQuestion')->param('answer', 'a')->param('questionId', $question->id)->param('chatId', $chatId);
-        }
-        if ($question->b_variant) {
-            $message .= "b) " . $question->b_variant . "\n";
-            $rows[] = Button::make('b')->action('answerQuestion')->param('answer', 'b')->param('questionId', $question->id)->param('chatId', $chatId);
-        }
-        if ($question->c_variant) {
-            $message .= "c) " . $question->c_variant . "\n";
-            $rows[] = Button::make('c')->action('answerQuestion')->param('answer', 'c')->param('questionId', $question->id)->param('chatId', $chatId);
-        }
-        if ($question->d_variant) {
-            $message .= "d) " . $question->d_variant . "\n";
-            $rows[] = Button::make('d')->action('answerQuestion')->param('answer', 'd')->param('questionId', $question->id)->param('chatId', $chatId);
-        }
+            if ($question->a_variant) {
+                $message .= "a) " . $question->a_variant . "\n";
+                $rows[] = Button::make('a')->action('answerQuestion')->param('answer', 'a')->param('questionId', $question->id)->param('chatId', $chatId);
+            }
+            if ($question->b_variant) {
+                $message .= "b) " . $question->b_variant . "\n";
+                $rows[] = Button::make('b')->action('answerQuestion')->param('answer', 'b')->param('questionId', $question->id)->param('chatId', $chatId);
+            }
+            if ($question->c_variant) {
+                $message .= "c) " . $question->c_variant . "\n";
+                $rows[] = Button::make('c')->action('answerQuestion')->param('answer', 'c')->param('questionId', $question->id)->param('chatId', $chatId);
+            }
+            if ($question->d_variant) {
+                $message .= "d) " . $question->d_variant . "\n";
+                $rows[] = Button::make('d')->action('answerQuestion')->param('answer', 'd')->param('questionId', $question->id)->param('chatId', $chatId);
+            }
 
-        if (empty($rows)) {
-            Telegraph::chat($chatId)->message("Bu savol uchun javob variantlari mavjud emas!")->send();
-            return;
-        }
-
-        $keyboard = Keyboard::make()->row($rows);
-
-        if ($question->question_image) {
-            $filePath = 'media/' . $question->question_image;
-            $absolutePath = storage_path('app/public/' . $filePath);
-
-            if (!Storage::disk('public')->exists($filePath)) {
-                Telegraph::chat($chatId)->message('Rasm topilmadi!')->send();
+            if (empty($rows)) {
+                Telegraph::chat($chatId)->message("Bu savol uchun javob variantlari mavjud emas!")->send();
                 return;
             }
 
-            Telegraph::chat($chatId)->photo($absolutePath)
-                ->message($message)
-                ->keyboard($keyboard)
-                ->send();
-        } else {
-            Telegraph::chat($chatId)->message($message)
-                ->keyboard($keyboard)
+            $keyboard = Keyboard::make()->row($rows);
+
+            if ($question->question_image) {
+                $filePath = 'media/' . $question->question_image;
+                $absolutePath = storage_path('app/public/' . $filePath);
+
+                if (!Storage::disk('public')->exists($filePath)) {
+                    Telegraph::chat($chatId)->message('Rasm topilmadi!')->send();
+                    return;
+                }
+
+                Telegraph::chat($chatId)->photo($absolutePath)
+                    ->message($message)
+                    ->keyboard($keyboard)
+                    ->send();
+            } else {
+                Telegraph::chat($chatId)->message($message)
+                    ->keyboard($keyboard)
+                    ->send();
+            }
+        } catch (Exception $e) {
+            Log::error("sendQuestion xatosi: " . $e->getMessage());
+            Telegraph::message("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.")
                 ->send();
         }
     }
@@ -258,18 +266,25 @@ class TelegramHandler extends WebhookHandler
                 $this->reply("Savol topilmadi!");
                 return;
             }
+            $isCorrect = $question->correct_answer == $answer;
+            $this->reply($isCorrect ? "✅ To'g'ri javob!" : "❌ Noto'g'ri javob!");
+
             Telegraph::chat($chatId)
                 ->deleteMessage($messageId)
                 ->send();
 
-            $isCorrect = $question->correct_answer == $answer;
-            Telegraph::answerCallbackQuery($callbackQuery['id'], [
-                'text' => "✅ To‘g‘ri, {$user->first_name}! 🎉",
-                'show_alert' => true
-            ]);
-
             if (!$isCorrect) {
-                $user->increment('wrong_answers');
+                $user->update([
+                    'wrong_answers' => DB::raw('wrong_answers + 1'),
+                    'total' => DB::raw('total + 1'),
+                    'incorrect' => DB::raw('incorrect + 1'),
+                ]);
+                $user->refresh();
+            } else {
+                $user->update([
+                    'correct' => DB::raw('correct + 1'),
+                    'total' => DB::raw('total + 1'),
+                ]);
             }
             $message = "📝 $question->id - savol: " . $question->title . "\n\n\n";
 
@@ -334,7 +349,7 @@ class TelegramHandler extends WebhookHandler
                     'wrong_answers' => 0,
                     'current_question_index' => 0
                 ]);
-                Telegraph::chat($chatId)->message("❌ Siz 3 ta xato javob berdingiz. Test tugadi! Bosh sahifaga qaytdingiz. Qayta boshlash uchun /start buyrug'ini yuboring.")
+                Telegraph::chat($chatId)->message("❌ Sizda noto'g'ri javoblar soni 3 taga yetdi, Iltimos, qaytadan urinib ko'ring!")
                     ->send();
                 return;
             }
@@ -347,7 +362,7 @@ class TelegramHandler extends WebhookHandler
                     'current_question_index' => 0,
                     'wrong_answers' => 0
                 ]);
-                Telegraph::chat($chatId)->message("🎉 Test tugadi! Natijalaringizni ko'rish uchun /results buyrug'ini yuboring.")
+                Telegraph::chat($chatId)->message("🎉 Tabriklaymiz! Testni muvaffaqqiyatli tugatdingiz!")
                     ->send();
                 return;
             }
@@ -359,7 +374,7 @@ class TelegramHandler extends WebhookHandler
                     'current_question_index' => 0,
                     'wrong_answers' => 0
                 ]);
-                Telegraph::chat($chatId)->message("🎉 Test tugadi! Natijalaringizni ko'rish uchun /results buyrug'ini yuboring.")
+                Telegraph::chat($chatId)->message("🎉 Tabriklaymiz! Testni muvaffaqqiyatli tugatdingiz!")
                     ->send();
                 return;
             }
@@ -391,14 +406,54 @@ class TelegramHandler extends WebhookHandler
             ]);
             return;
         }
-        CheckUser::updateOrCreate(
-            ['chat_id' => $text],
-            ['active' => $store]
-        );
-        $user->update([
-            "page" => User::HOME_PAGE
+        if (!$store) {
+            $user->update([
+                "page" => User::HOME_PAGE
+            ]);
+            User::where('chat_id', $text)->update(['subscribe_date' => null, 'subscribe_type' => null]);
+            Telegraph::chat($chatId)->message("Obuna muvaffaqqiyatli to'xtatildi")->send();
+            return;
+        }
+        $keyboard = Keyboard::make()->row([
+            Button::make('1 oylik')->action('giveSubscribe')->param('key', 1)->param('text', $text)->param('chatId', $chatId),
+            Button::make('2 haftalik')->action('giveSubscribe')->param('key', 2)->param('text', $text)->param('chatId', $chatId),
+            Button::make('10 kunlik')->action('giveSubscribe')->param('key', 3)->param('text', $text)->param('chatId', $chatId),
         ]);
-        Telegraph::chat($chatId)->message($reply)->send();
+        Telegraph::chat($chatId)->message("Iltimos obuna turini tanlang!\n")
+            ->keyboard($keyboard)
+            ->send();
+    }
+
+    public function giveSubscribe($chatId, $key, $text)
+    {
+        $callbackQuery = request()->input('callback_query');
+        $messageId = $callbackQuery['message']['message_id'] ?? null;
+        $user = User::where('chat_id', $text)->first();
+        switch ($key) {
+            case User::ONE_MONTH_SUBS:
+                $user->update([
+                    'subscribe_type' => User::ONE_MONTH_SUBS,
+                    'subscribe_date' => Carbon::now()->addMonth(),
+                ]);
+                break;
+            case User::TWO_WEEKS_SUBS:
+                $user->update([
+                    'subscribe_type' => User::TWO_WEEKS_SUBS,
+                    'subscribe_date' => Carbon::now()->addWeeks(2),
+                ]);
+                break;
+            case User::TEN_DAYS_SUBS:
+                $user->update([
+                    'subscribe_type' => User::TEN_DAYS_SUBS,
+                    'subscribe_date' => Carbon::now()->addDays(10),
+                ]);
+                break;
+        }
+        Telegraph::chat($chatId)
+            ->deleteMessage($messageId)
+            ->send();
+        User::where('chat_id', $chatId)->update(['page' => User::HOME_PAGE]);
+        Telegraph::chat($chatId)->message("Obuna muvaffaqqiyatli berildi!")->send();
     }
 
     public function  test()

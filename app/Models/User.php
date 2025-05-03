@@ -18,6 +18,10 @@ class User extends Authenticatable
     const STANDART_TEST = 4;
     const TEST_IN_PROGRESS = 5;
     const TEST_COMPLETED = 6;
+    const ENTER_CHAT_ID = 7;
+    const ONE_MONTH_SUBS = 1;
+    const TWO_WEEKS_SUBS = 2;
+    const TEN_DAYS_SUBS = 3;
 
     /**
      * The attributes that are mass assignable.
