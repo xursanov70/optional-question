@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Telegram;
 
 use App\Models\CheckUser;
+use App\Models\Question;
+use App\Models\Test;
 use App\Models\User;
+use DefStudio\Telegraph\Facades\Telegraph;
 use DefStudio\Telegraph\Handlers\WebhookHandler;
 use DefStudio\Telegraph\Keyboard\Button;
 use DefStudio\Telegraph\Keyboard\Keyboard;
 use DefStudio\Telegraph\Keyboard\ReplyKeyboard;
+use Exception;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Stringable;
 
 class TelegramHandler extends WebhookHandler
@@ -24,43 +30,21 @@ class TelegramHandler extends WebhookHandler
         }
         $admin = $this->getAdmin($chatId);
 
-
-        if (!$this->checkUser($chatId)) {
-            // Xabar yuboriladi + mavjud tugmalarni tozalash uchun bo'sh klaviatura
-            $this->chat->message("Assalamu alaykum $firstName, Iltimos, Telegram ma'lumotlarim tugmasini bosib ID raqamingizni adminga yuboring \n va qayta kelib /start buyrug'ini bosing!")
-                ->replyKeyboard(
-                    ReplyKeyboard::make()
-                        ->button("Telegram ma'lumotlarim 📲")
-                        // ->button("Admin bilan aloqa 📞")
-                        // ->button('Ulashish 📮')
-                        // ->button('Test yechish 📄')
-                        ->chunk(2)
-                        ->inputPlaceholder("Assalamu alaykum...")
-                        ->resize()
-                )->send();
-            return;
-        }
-        $url = env('APP_URL');
-
-        // Agar foydalanuvchiga ruxsat bo‘lsa - tugmalar ko‘rsatiladi
         $this->chat->message('Assalamu alaykum ' . $firstName . ', Botimizga xush kelibsiz!')
             ->replyKeyboard(
                 ReplyKeyboard::make()
-                    ->button("Telegram ma'lumotlarim 📲")
-                    ->button("Admin bilan aloqa 📞")
-                    ->button('Ulashish 📮')
-                    ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
-                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq berish"))
-                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq olish"))
+                    ->button("👑 Standart test 👑")
+                    ->button("👑 Avto guruh 👑")
+                    ->button("👑 Mavzulashtirilgan testlar 👑")
+                    ->button("💳 Obuna 💳")
+                    ->button("📲 Telegram ma'lumotlarim 📲")
+                    ->button("❇️ Natijalarim ❇️")
+                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("✅ Huquq berish ✅"))
+                    ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("❌ Huquq olish ❌"))
                     ->chunk(2)
                     ->inputPlaceholder("Assalamu alaykum...")
                     ->resize()
             )->send();
-    }
-
-    private function checkUser($chatId): bool
-    {
-        return CheckUser::where("chat_id", $chatId)->where("active", true)->first() ? true : false;
     }
 
     public function handleChatMessage(Stringable $text): void
@@ -75,117 +59,351 @@ class TelegramHandler extends WebhookHandler
         $lastName = $this->message->from()->lastName();
         $chatId = $this->message->from()->id();
 
-        // Foydalanuvchi ma'lumotlarini yaratish
         $this->createUser($chatId, $firstName, $username, $lastName);
 
-        if ($text == "Telegram ma'lumotlarim 📲") {
+        if ($text == "📲 Telegram ma'lumotlarim 📲") {
             $this->reply($this->getInfo($chatId, $username, $firstName));
             return;
         }
-        $admin = $this->getAdmin($chatId);
-
-        $userPage = User::where("chat_id", $chatId)
-            ->where("active", true)
-            ->first();
-        if ($userPage->page == User::ADD_RULE_PAGE) {
-            $user = User::where('chat_id', $text)->first();
-            if (!$user) {
-                $this->reply("Botga start bosmagan userga huquq bera olmaysiz!");
-                $userPage->update([
-                    "page" => User::HOME_PAGE
-                ]);
-                return;
-            }
-            $checkUser =  CheckUser::where("chat_id", $text)->first();
-            if (!$checkUser) {
-                CheckUser::create([
-                    "chat_id" => $text
-                ]);
-            } else {
-                $checkUser->update([
-                    "active" => true
-                ]);
-            }
-            $userPage->update([
-                "page" => User::HOME_PAGE
-            ]);
-            $this->reply("Huquq muvafaqqiyatli berildi!");
-        } elseif ($userPage->page == User::REMOVE_RULE_PAGE) {
-            $user = User::where('chat_id', $text)->first();
-            if (!$user) {
-                $this->reply("Botga start bosmagan userdan huquq ololmaysiz!");
-                $userPage->update([
-                    "page" => User::HOME_PAGE
-                ]);
-                return;
-            }
-            $checkUser =  CheckUser::where("chat_id", $text)->first();
-            if (!$checkUser) {
-                CheckUser::create([
-                    "chat_id" => $text,
-                    "active" => false
-                ]);
-            } else {
-                $checkUser->update([
-                    "active" => false
-                ]);
-            }
-            $userPage->update([
-                "page" => User::HOME_PAGE
-            ]);
-            $this->reply("Huquq muvafaqqiyatli olindi!");
-        }
-
-        if (!$this->checkUser($chatId)) {
-            $this->chat->message("Assalamu alaykum $firstName, Iltimos, Telegram ma'lumotlarim tugmasini bosib, ID raqamingizni adminga yuboring \nva qayta kelib /start buyrug'ini bosing!")
-                ->replyKeyboard(
-                    ReplyKeyboard::make()
-                        ->button("Telegram ma'lumotlarim 📲")
-                        // ->button("Admin bilan aloqa 📞")
-                        // ->button('Ulashish 📮')
-                        // ->button('Test yechish 📄')
-                        ->chunk(2)
-                        ->inputPlaceholder("Assalamu alaykum...")
-                        ->resize()
-                )->send();
+        $user = User::where('chat_id', $chatId)->where("active", true)->first();
+        if (!$user) {
+            $this->reply("Foydalanuvchi topilmadi!");
             return;
         }
 
-        // Foydalanuvchi ruxsatli bo'lsa, xabar matniga qarab harakat
-        switch ($text) {
-            case "Huquq berish":
-                $this->addedRule($chatId);
+        switch ($user->page) {
+            case User::ADD_RULE_PAGE:
+                $this->managaRule($chatId, $text, true);
                 break;
-            case "Huquq olish":
-                $this->removeRule($chatId);
-                break;
-            case "Admin bilan aloqa 📞":
-                $this->reply($this->admin());
-                break;
-            case "Ulashish 📮":
-                $this->share($this->chat);
-                break;
-            case "Test yechish 📄":
-                if (!$this->checkUser($chatId)) {
-                    $this->chat->message("Kechirasiz, test yechish uchun foydalanish taqiqlangan!")->send();
-                    return;
-                }
-                $url = env('APP_URL');
-                $this->chat->message('Iltimos, qaytadan Test yechish tugmasini bosing!')
-                    ->replyKeyboard(
-                        ReplyKeyboard::make()
-                            ->button("Telegram ma'lumotlarim 📲")
-                            ->button("Admin bilan aloqa 📞")
-                            ->button('Ulashish 📮')
-                            ->button('Test yechish 📄')->webApp($url . "?chat_id=" . $chatId)
-                            ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq berish"))
-                            ->when($admin, fn(ReplyKeyboard $keyboard) => $keyboard->button("Huquq olish"))
-                            ->chunk(2)
-                            ->inputPlaceholder("Assalamu alaykum...")
-                            ->resize()
-                    )->send();
+            case User::REMOVE_RULE_PAGE:
+                $this->managaRule($chatId, $text, false);
                 break;
         }
+
+
+        switch ($text) {
+            case "✅ Huquq berish ✅":
+                $this->rule($user, true);
+                break;
+            case "❌ Huquq olish ❌":
+                $this->rule($user, false);
+                break;
+            case "👑 Standart test 👑":
+                $this->standartTest($chatId);
+                break;
+            case "👑 Avto guruh 👑":
+                $this->share($this->chat);
+                break;
+            case "👑 Mavzulashtirilgan testlar 👑":
+                $this->share($this->chat);
+                break;
+            case "💳 Obuna 💳":
+                $this->subscribe();
+                break;
+            case "❇️ Natijalarim ❇️":
+                $this->result($user);
+                break;
+        }
+    }
+
+    private function result($user)
+    {
+        $message = "Natijalarim: \n\n";
+        $message .= "Jami savollar: $user->total \n";
+        $message .= "To'g'ri javoblar: $user->correct \n";
+        $message .= "Noto'g'ri javoblar: $user->incorrect \n";
+        $this->reply($message);
+    }
+
+    private function subscribe()
+    {
+        $reply = "Bot xizmatlaridan to'liq foydalanish (PREMIUM xizmatni ishga tushirish) uchun to'lov qilishingiz kerak \n\n" .
+            "        - 1 oylik to'lov 92 ming so'm 
+        - 2 haftalik to'lov 50 ming so'm 
+        - 10 kunlik to'lov 40 ming so'm " .
+            "\n\n 5614 6887 0305 9211 raqamli J. Xursanov nomidagi kartaga to'lov " .
+            "qilib @jasko_70 profiliga to'lov chekni rasmini va Telegram ma'lumotlarim 📲 bo'limidan ID raqamingizni olib ikkalasini tashlab qo'yishingiz kerak bo'ladi " .
+            "tez fursatda botdan to'liq foydalanishingiz mumkinligi to'g'risida sizga xabar boradi";
+        return $this->reply($reply);
+    }
+
+    public function standartTest($chatId)
+    {
+        try {
+            $user = User::where('chat_id', $chatId)->first();
+            if ($user->subscribe_date < date("Y-m-d")) {
+                Telegraph::chat($chatId)->message("Bo'limdan foydalanish uchun obuna sotib oling!")
+                    ->send();
+                return;
+            }
+
+            Telegraph::chat($chatId)->message('🖊 20 ta savol  ·  ⏱️ Umumiy test davomiyligi - 25 daqiqa')
+                ->keyboard(Keyboard::make()->buttons([
+                    Button::make('Bu testni boshlash')->action('beginTest')->param('chatId', $chatId),
+                ]))->send();
+
+            $user->update([
+                "page" => User::STANDART_TEST
+            ]);
+        } catch (Exception $e) {
+            Log::error("startdartTest xatosi: " . $e->getMessage());
+            $this->reply("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.");
+        }
+    }
+
+
+    public function beginTest($chatId)
+    {
+        try {
+            $user = User::where('chat_id', $chatId)->first();
+            $callbackQuery = request()->input('callback_query');
+            $messageId = $callbackQuery['message']['message_id'] ?? null;
+
+            if (!$user || $user->subscribe_date < date("Y-m-d")) {
+                $this->reply("Bo'limdan foydalanish uchun obuna sotib oling!");
+                return;
+            }
+            Telegraph::chat($chatId)
+                ->deleteMessage($messageId)
+                ->send();
+
+            $user->update([
+                'page' => User::TEST_IN_PROGRESS,
+                'wrong_answers' => 0,
+                'current_question_index' => 0
+            ]);
+
+            $question = Test::where('id', '>', $user->current_question_index)->first();
+
+            if (!$question) {
+                $this->reply("Hozirda savollar mavjud emas. Keyinroq urinib ko'ring!");
+                return;
+            }
+
+            $this->sendQuestion($chatId, $question, $question->id);
+        } catch (Exception $e) {
+            Log::error("beginTest xatosi: " . $e->getMessage());
+            $this->reply("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.");
+        }
+    }
+
+    private function sendQuestion($chatId, $question, $questionNumber)
+    {
+        $message = "📝 $questionNumber - savol: " . $question->title . "\n\n";
+        $rows = [];
+
+        if ($question->a_variant) {
+            $message .= "a) " . $question->a_variant . "\n";
+            $rows[] = Button::make('a')->action('answerQuestion')->param('answer', 'a')->param('questionId', $question->id)->param('chatId', $chatId);
+        }
+        if ($question->b_variant) {
+            $message .= "b) " . $question->b_variant . "\n";
+            $rows[] = Button::make('b')->action('answerQuestion')->param('answer', 'b')->param('questionId', $question->id)->param('chatId', $chatId);
+        }
+        if ($question->c_variant) {
+            $message .= "c) " . $question->c_variant . "\n";
+            $rows[] = Button::make('c')->action('answerQuestion')->param('answer', 'c')->param('questionId', $question->id)->param('chatId', $chatId);
+        }
+        if ($question->d_variant) {
+            $message .= "d) " . $question->d_variant . "\n";
+            $rows[] = Button::make('d')->action('answerQuestion')->param('answer', 'd')->param('questionId', $question->id)->param('chatId', $chatId);
+        }
+
+        if (empty($rows)) {
+            Telegraph::chat($chatId)->message("Bu savol uchun javob variantlari mavjud emas!")->send();
+            return;
+        }
+
+        $keyboard = Keyboard::make()->row($rows);
+
+        if ($question->question_image) {
+            $filePath = 'media/' . $question->question_image;
+            $absolutePath = storage_path('app/public/' . $filePath);
+
+            if (!Storage::disk('public')->exists($filePath)) {
+                Telegraph::chat($chatId)->message('Rasm topilmadi!')->send();
+                return;
+            }
+
+            Telegraph::chat($chatId)->photo($absolutePath)
+                ->message($message)
+                ->keyboard($keyboard)
+                ->send();
+        } else {
+            Telegraph::chat($chatId)->message($message)
+                ->keyboard($keyboard)
+                ->send();
+        }
+    }
+
+    public function answerQuestion($questionId, $chatId, $answer)
+    {
+        try {
+            $user = User::where('chat_id', $chatId)->first();
+            $callbackQuery = request()->input('callback_query');
+            $messageId = $callbackQuery['message']['message_id'] ?? null;
+
+            if (!$user || $user->subscribe_date < date("Y-m-d")) {
+                $this->reply("Bo'limdan foydalanish uchun obuna sotib oling!");
+                return;
+            }
+
+            if (!$answer || !$questionId) {
+                $this->reply("Javob yoki savol ID si topilmadi!");
+                return;
+            }
+
+            $question = Test::find($questionId);
+            if (!$question) {
+                $this->reply("Savol topilmadi!");
+                return;
+            }
+            Telegraph::chat($chatId)
+                ->deleteMessage($messageId)
+                ->send();
+
+            $isCorrect = $question->correct_answer == $answer;
+            Telegraph::answerCallbackQuery($callbackQuery['id'], [
+                'text' => "✅ To‘g‘ri, {$user->first_name}! 🎉",
+                'show_alert' => true
+            ]);
+
+            if (!$isCorrect) {
+                $user->increment('wrong_answers');
+            }
+            $message = "📝 $question->id - savol: " . $question->title . "\n\n\n";
+
+            if ($question->a_variant) {
+                $userMark = 'a' === $answer ? "❎ " : "";
+                $inCorrectAnswer = $userMark == "" ? "❌ " : $userMark;
+                $mark = $question->correct_answer == "a" ? "✅ " : $inCorrectAnswer;
+                $message .=  $mark . "a) " . $question->a_variant . "\n\n";
+            }
+            if ($question->b_variant) {
+                $userMark = 'b' ==  $answer ? "❎ " : "";
+                $inCorrectAnswer = $userMark != "" ? $userMark : "❌ ";
+                $mark = $question->correct_answer == "b" ? "✅ " : $inCorrectAnswer;
+                $message .= $mark . "b) " . $question->b_variant . "\n\n";
+            }
+            if ($question->c_variant) {
+                $userMark = 'c' ==  $answer ? "❎ " : "";
+                $inCorrectAnswer = $userMark != "" ? $userMark : "❌ ";
+                $mark = $question->correct_answer == "c" ? "✅ " : $inCorrectAnswer;
+                $message .= $mark  . "c) " . $question->c_variant . "\n\n";
+            }
+            if ($question->d_variant) {
+                $userMark = 'd' ==  $answer ? "❎ " : "";
+                $inCorrectAnswer = $userMark != "" ? $userMark : "❌ ";
+                $mark = $question->correct_answer == "d" ? "✅ " : $inCorrectAnswer;
+                $message .= $mark . "d) " . $question->d_variant . "\n\n";
+            }
+
+
+            $filePath = 'media/' . $question->answer_media;
+            $absolutePath = storage_path('app/public/' . $filePath);
+
+            if (!Storage::disk('public')->exists($filePath)) {
+                Telegraph::chat($chatId)->message('Savol uchun media topilmadi!')->send();
+                return;
+            }
+
+            if ($question->media_status == Test::QUESTION_IMAGE) {
+                $filePath = 'media/' . $question->question_image;
+                $absolutePath = storage_path('app/public/' . $filePath);
+                Telegraph::chat($chatId)->photo($absolutePath)
+                    ->message($message)
+                    ->send();
+            } elseif ($question->media_status == Test::IMAGE) {
+                Telegraph::chat($chatId)->photo($absolutePath)
+                    ->message($message)
+                    ->send();
+            } elseif ($question->media_status == Test::GIF) {
+                Telegraph::chat($chatId)->animation($absolutePath)
+                    ->message($message)
+                    ->send();
+            } elseif ($question->media_status == Test::VIDEO) {
+                Telegraph::chat($chatId)->video($absolutePath)
+                    ->message($message)
+                    ->send();
+            }
+
+
+            if ($user->wrong_answers >= 3) {
+                $user->update([
+                    'page' => User::HOME_PAGE,
+                    'wrong_answers' => 0,
+                    'current_question_index' => 0
+                ]);
+                Telegraph::chat($chatId)->message("❌ Siz 3 ta xato javob berdingiz. Test tugadi! Bosh sahifaga qaytdingiz. Qayta boshlash uchun /start buyrug'ini yuboring.")
+                    ->send();
+                return;
+            }
+
+            $currentIndex = $user->current_question_index + 1;
+
+            if ($currentIndex == 20) {
+                $user->update([
+                    'page' => User::TEST_COMPLETED,
+                    'current_question_index' => 0,
+                    'wrong_answers' => 0
+                ]);
+                Telegraph::chat($chatId)->message("🎉 Test tugadi! Natijalaringizni ko'rish uchun /results buyrug'ini yuboring.")
+                    ->send();
+                return;
+            }
+
+            $nextQuestion = Test::skip($currentIndex)->first();
+            if (!$nextQuestion) {
+                $user->update([
+                    'page' => User::TEST_COMPLETED,
+                    'current_question_index' => 0,
+                    'wrong_answers' => 0
+                ]);
+                Telegraph::chat($chatId)->message("🎉 Test tugadi! Natijalaringizni ko'rish uchun /results buyrug'ini yuboring.")
+                    ->send();
+                return;
+            }
+
+            $user->update([
+                'current_question_index' => $currentIndex
+            ]);
+
+            $this->sendQuestion($chatId, $nextQuestion, $currentIndex + 1);
+        } catch (Exception $e) {
+            Log::error("answerQuestion xatosi: " . $e->getMessage());
+            Telegraph::message("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.")
+                ->send();
+        }
+    }
+
+
+
+    private function managaRule($chatId, $text, $store)
+    {
+        $user = User::where('chat_id', $chatId)->first();
+        $notFoundReply = $store ? "Botga start bosmagan foydalanuvchiga huquq bera olmaysiz!" : "Botga start bosmagan foydalanuvchidan huquq ola olmaysiz!";
+        $reply = $store ? "Huquq muvafaqqiyatli berildi!" : "Huquq muvafaqqiyatli olindi!";
+        $newUser = User::where('chat_id', $text)->first();
+        if (!$newUser) {
+            Telegraph::chat($chatId)->message($notFoundReply)->send();
+            $user->update([
+                "page" => User::HOME_PAGE
+            ]);
+            return;
+        }
+        CheckUser::updateOrCreate(
+            ['chat_id' => $text],
+            ['active' => $store]
+        );
+        $user->update([
+            "page" => User::HOME_PAGE
+        ]);
+        Telegraph::chat($chatId)->message($reply)->send();
+    }
+
+    public function  test()
+    {
+        return Test::skip(1)->first();
     }
 
     private function getUserPage($chatId)
@@ -203,35 +421,18 @@ class TelegramHandler extends WebhookHandler
             ->first() ? true : false;
     }
 
-    private function addedRule($chatId)
+    private function rule($user, $store)
     {
-        $user =  User::where('chat_id', $chatId)
-            ->where('admin', true)
-            ->first();
-        if (!$user) {
-            $this->reply("Sizda bunday huquq mavjud emas!");
+        if (!$user->admin) {
+            Telegraph::chat($user->chat_id)->message("Sizda bunday huquq mavjud emas!")->send();
             return;
         }
         $user->update([
-            "page" => User::ADD_RULE_PAGE
+            "page" => $store ? User::ADD_RULE_PAGE : User::REMOVE_RULE_PAGE
         ]);
-        $this->reply("Iltimos, foydalanuvchi ID raqamini kiriting");
+        Telegraph::chat($user->chat_id)->message("Iltimos, foydalanuvchi ID raqamini kiriting")->send();
     }
 
-    private function removeRule($chatId)
-    {
-        $user =  User::where('chat_id', $chatId)
-            ->where('admin', true)
-            ->first();
-        if (!$user) {
-            $this->reply("Sizda bunday huquq mavjud emas!");
-            return;
-        }
-        $user->update([
-            "page" => User::REMOVE_RULE_PAGE
-        ]);
-        $this->reply("Iltimos, foydalanuvchi ID raqamini kiriting");
-    }
 
     public function share($chat)
     {
@@ -259,7 +460,7 @@ class TelegramHandler extends WebhookHandler
         return $message;
     }
 
-    public function createUser($chatId, $firstName, $username, $lastName)
+    private function createUser($chatId, $firstName, $username, $lastName)
     {
         $user = User::where('chat_id', $chatId)->where('active', true)->first();
 

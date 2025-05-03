@@ -14,7 +14,13 @@ class Test extends Model
         'd_variant',
         'correct_answer',
         'key',
+        'answer_media',
         'test_number',
         'active'
     ];
+
+    const QUESTION_IMAGE = 1;
+    const IMAGE = 2;
+    const GIF = 3;
+    const VIDEO = 4;
 }

@@ -12,9 +12,12 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
-    const ADD_RULE_PAGE = 2;
     const HOME_PAGE = 1;
+    const ADD_RULE_PAGE = 2;
     const REMOVE_RULE_PAGE = 3;
+    const STANDART_TEST = 4;
+    const TEST_IN_PROGRESS = 5;
+    const TEST_COMPLETED = 6;
 
     /**
      * The attributes that are mass assignable.
@@ -22,13 +25,19 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
         'username',
         'first_name',
         'last_name',
         'chat_id',
         'active',
-        'page'
+        'page',
+        'subscribe_date',
+        'subscribe_type',
+        'wrong_answers',
+        'current_question_index',
+        'total',
+        'correct',
+        'incorrect',
     ];
 
     /**

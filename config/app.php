@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'telegraph' => [
+        'bot_token' => env('BOT_TOKEN', '7949153270:AAEtL4kQju5CpweI5bwdRlkwBb4ucFcVQEM')
+    ]
 ];

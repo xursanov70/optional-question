@@ -13,13 +13,20 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
             $table->string('chat_id');
             $table->string('username')->nullable();
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->boolean('active')->default(true);
             $table->integer('page')->default(1);
+            $table->integer('wrong_answers')->default(0);
+            $table->integer('current_question_index')->default(0);
+            $table->date("subscribe_date")->nullable();
+            $table->integer("subscribe_type")->nullable();
+            $table->boolean("admin")->default(false);
+            $table->integer('total')->default(0);
+            $table->integer('correct')->default(0);
+            $table->integer('incorrect')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

@@ -21,7 +21,10 @@ return new class extends Migration
             $table->string('correct_answer')->nullable();
             $table->string('key')->nullable();
             $table->integer('test_number')->nullable();
+            $table->string("question_image")->nullable();
+            $table->string("answer_media")->nullable();
             $table->boolean('active')->default(true);
+            $table->integer('media_status')->nullable();
             $table->timestamps();
         });
     }

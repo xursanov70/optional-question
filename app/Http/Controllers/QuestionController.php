@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\IOFactory;
@@ -23,25 +24,26 @@ use PhpOffice\PhpWord\Element\TextRun;
 
 class QuestionController extends Controller
 {
-    public function importData(Request $request)
+    public function storeImage(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
-        ]);
+        // Fayl mavjudligini tekshirish
+        if (!$request->hasFile('image') || !$request->file('image')->isValid()) {
+            return 'Fayl yuklanmadi yoki xato!';
+        }
+    
+        $sealFileName = "gif.mp4";
+        $folderPath = "media";
+        $sealToStore = $folderPath . '/' . $sealFileName;
+    
+        // Faylni public diskkaga saqlash
         try {
-            Excel::import(new QuestionsImport, $request->file('file'));
-
-            return response()->json(["message" => "Ma'lumotlar muvaffaqiyatli yuklandi!"], 200);
-        } catch (Exception $e) {
-            return response()->json([
-                "message" => "Dasturda xatolik",
-                "error" => $e->getMessage(),
-                "file" => $e->getFile(),
-                "line" => $e->getLine()
-            ]);
+            $seal = $request->file('image')->getContent(); // Fayl tarkibini olish
+            Storage::disk('public')->put($sealToStore, $seal);
+            return 'ok';
+        } catch (\Exception $e) {
+            return 'Xato: ' . $e->getMessage();
         }
     }
-
     public function questions()
     {
         $startNumber = request('start_number');
@@ -87,86 +89,7 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function exportExcelData()
-    {
-        $questions = Question::where('key', 'k_docx')
-            ->get();
-        $writer = WriterEntityFactory::createXLSXWriter();
-        $filePath = 'storage/reports/' . date('Y_m_d_H_i_s') . 'report.xlsx';
-        $writer->openToFile($filePath);
-        $writer->addRow(WriterEntityFactory::createRowFromArray([
-            'title',
-            'a_variant',
-            'b_variant',
-            'c_variant',
-            'd_variant',
-            'correct_answer',
-            'test_number',
-            'key',
-        ]));
-        $data = [];
 
-        foreach ($questions as $question) {
-            $data[] = [
-                'title' => $question->title,
-                'a_variant' => $question->a_variant,
-                'b_variant' => $question->b_variant,
-                'c_variant' => $question->c_variant,
-                'd_variant' => $question->d_variant,
-                'correct_answer' => $question->correct_answer,
-                'test_number' => $question->test_number,
-                'key' => $question->key,
-            ];
-        }
-        foreach ($data as $row) {
-            $rowFromValues = WriterEntityFactory::createRowFromArray($row);
-            $writer->addRow($rowFromValues);
-        }
-        $writer->close();
-        return $filePath;
-    }
-
-
-    public function run()
-    {
-        $questions = [
-            [
-                'title' => 'Quyida keltirilgan kompyuter tarmoqlarining qaysi biri avval paydo bo’lgan?',
-                'correct_answer_text' => 'Wide Area Network',
-            ],
-            [
-                'title' => 'To’rtta bir-biri bilan bog’langan bog’lamlar strukturasi (kvadrat shaklida) qaysi topologiya turiga mansub?',
-                'correct_answer_text' => 'Xalqa',
-            ],
-        ];
-
-        foreach ($questions as $question) {
-            $correct_answer_index = rand(0, 3); // Tog'ri javob uchun indeks tanlash
-
-            // Fake variantlar yaratish
-            $fake_answers = [
-                Str::random(10),
-                Str::random(10),
-                Str::random(10),
-                $question['correct_answer_text'],
-            ];
-
-            shuffle($fake_answers); // Variantlarni aralashtirish
-
-            // Tog'ri javobni aniqlash
-            $correct_answer = ['a', 'b', 'c', 'd'][$correct_answer_index];
-
-            // Ma'lumotni jadvalga kiritish
-            DB::table('test_questions')->insert([
-                'title' => $question['title'],
-                'a_variant' => $fake_answers[0],
-                'b_variant' => $fake_answers[1],
-                'c_variant' => $fake_answers[2],
-                'd_variant' => $fake_answers[3],
-                'correct_answer' => $correct_answer,
-            ]);
-        }
-    }
 
 
     public function importWordFile(Request $request)
@@ -218,7 +141,7 @@ class QuestionController extends Controller
                     ]);
 
                     $data['question'] = $line;
-                    $testCounter++; 
+                    $testCounter++;
                 } elseif (preg_match('/^a\)/', $line)) {
                     $line = substr($line, 3);
                     $test = Test::whereNull('a_variant')->first();
@@ -270,6 +193,4 @@ class QuestionController extends Controller
             return 'ok';
         }
     }
-
-
 }

@@ -8,6 +8,7 @@ services:
       - .env
     networks:
       - laravel_network
+    restart: unless-stopped
 
   web:
     image: nginx:latest
@@ -21,6 +22,7 @@ services:
       - app
     networks:
       - laravel_network
+    restart: unless-stopped
 
   jprq:
     image: alpine:latest
@@ -36,6 +38,7 @@ services:
     depends_on:
       - web
     network_mode: host # Tashqi 8000-portga ulanish uchun
+    restart: unless-stopped
 
 networks:
   laravel_network:
