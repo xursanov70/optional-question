@@ -37,7 +37,6 @@ class User extends Authenticatable
         'page',
         'subscribe_date',
         'subscribe_type',
-        'wrong_answers',
         'current_question_index',
         'total',
         'correct',

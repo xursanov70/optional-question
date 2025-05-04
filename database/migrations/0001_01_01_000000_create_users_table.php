@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('last_name')->nullable();
             $table->boolean('active')->default(true);
             $table->integer('page')->default(1);
-            $table->integer('wrong_answers')->default(0);
             $table->integer('current_question_index')->default(0);
             $table->date("subscribe_date")->nullable();
             $table->integer("subscribe_type")->nullable();
@@ -27,6 +26,9 @@ return new class extends Migration
             $table->integer('total')->default(0);
             $table->integer('correct')->default(0);
             $table->integer('incorrect')->default(0);
+            $table->integer('total_correct_answer')->default(0);
+            $table->integer('total_incorrect_answer')->default(0);
+            $table->integer('total_question')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

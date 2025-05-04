@@ -63,10 +63,6 @@ class TelegramHandler extends WebhookHandler
 
         $this->createUser($chatId, $firstName, $username, $lastName);
 
-        if ($text == "📲 Telegram ma'lumotlarim 📲") {
-            $this->reply($this->getInfo($chatId, $username, $firstName));
-            return;
-        }
         $user = User::where('chat_id', $chatId)->where("active", true)->first();
         if (!$user) {
             $this->reply("Foydalanuvchi topilmadi!");
@@ -105,15 +101,18 @@ class TelegramHandler extends WebhookHandler
             case "❇️ Natijalarim ❇️":
                 $this->result($user);
                 break;
+            case "📲 Telegram ma'lumotlarim 📲":
+                $this->reply($this->getInfo($chatId, $username, $firstName));
+                break;
         }
     }
 
     private function result($user)
     {
         $message = "Natijalarim: \n\n";
-        $message .= "Jami savollar: $user->total \n";
-        $message .= "To'g'ri javoblar: $user->correct \n";
-        $message .= "Noto'g'ri javoblar: $user->incorrect \n";
+        $message .= "Jami savollar: $user->total_question \n";
+        $message .= "To'g'ri javoblar: $user->total_correct_answer \n";
+        $message .= "Noto'g'ri javoblar: $user->total_incorrect_answer \n";
         $this->reply($message);
     }
 
@@ -139,10 +138,30 @@ class TelegramHandler extends WebhookHandler
                 return;
             }
 
+            $buttons = [];
+            $range = range(1, env('RANGE_COUNT'));
+            $start = 1;
+            $end = 2;
+
+            foreach ($range as $data) {
+                $message = $start . "-" . $end;
+                $buttons[] = Button::make($message)
+                    ->action('beginTest')
+                    ->param('start', $start)
+                    ->param('end', $end)
+                    ->param('chatId', $chatId);
+                $start += 20;
+                $end += 20;
+            }
+            $keyboard = Keyboard::make();
+            $rows = array_chunk($buttons, 4); 
+
+            foreach ($rows as $row) {
+                $keyboard->row($row);
+            }
+
             Telegraph::chat($chatId)->message('🖊 20 ta savol  ·  ⏱️ Umumiy test davomiyligi - 25 daqiqa')
-                ->keyboard(Keyboard::make()->buttons([
-                    Button::make('Bu testni boshlash')->action('beginTest')->param('chatId', $chatId),
-                ]))->send();
+                ->keyboard($keyboard)->send();
 
             $user->update([
                 "page" => User::STANDART_TEST
@@ -154,7 +173,7 @@ class TelegramHandler extends WebhookHandler
     }
 
 
-    public function beginTest($chatId)
+    public function beginTest($chatId, $start, $end)
     {
         try {
             $user = User::where('chat_id', $chatId)->first();
@@ -171,45 +190,48 @@ class TelegramHandler extends WebhookHandler
 
             $user->update([
                 'page' => User::TEST_IN_PROGRESS,
-                'wrong_answers' => 0,
+                'incorrect_answer' => 0,
+                'correct_answer' => 0,
+                'total' => 0,
                 'current_question_index' => 0
             ]);
+            $between = [$start, $end];
 
-            $question = Test::where('id', '>', $user->current_question_index)->first();
+            $question = Test::where('id', '>', $user->current_question_index)->whereBetween('id', $between)->first();
 
             if (!$question) {
-                $this->reply("Hozirda savollar mavjud emas. Keyinroq urinib ko'ring!");
+                Telegraph::chat($chatId)->message("Hozirda $start-$end  oraliqdagi savollar mavjud emas. Keyinroq urinib ko'ring!")->send();
                 return;
             }
 
-            $this->sendQuestion($chatId, $question, $question->id);
+            $this->sendQuestion($chatId, $question, $end);
         } catch (Exception $e) {
             Log::error("beginTest xatosi: " . $e->getMessage());
             $this->reply("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.");
         }
     }
 
-    private function sendQuestion($chatId, $question, $questionNumber)
+    private function sendQuestion($chatId, $question, $end)
     {
         try {
-            $message = "📝 $questionNumber - savol: " . $question->title . "\n\n";
+            $message = "📝 $question->id - savol: " . $question->title . "\n\n";
             $rows = [];
 
             if ($question->a_variant) {
                 $message .= "a) " . $question->a_variant . "\n";
-                $rows[] = Button::make('a')->action('answerQuestion')->param('answer', 'a')->param('questionId', $question->id)->param('chatId', $chatId);
+                $rows[] = Button::make('a')->action('answerQuestion')->param('answer', 'a')->param('questionId', $question->id)->param('end', $end);
             }
             if ($question->b_variant) {
                 $message .= "b) " . $question->b_variant . "\n";
-                $rows[] = Button::make('b')->action('answerQuestion')->param('answer', 'b')->param('questionId', $question->id)->param('chatId', $chatId);
+                $rows[] = Button::make('b')->action('answerQuestion')->param('answer', 'b')->param('questionId', $question->id)->param('end', $end);
             }
             if ($question->c_variant) {
                 $message .= "c) " . $question->c_variant . "\n";
-                $rows[] = Button::make('c')->action('answerQuestion')->param('answer', 'c')->param('questionId', $question->id)->param('chatId', $chatId);
+                $rows[] = Button::make('c')->action('answerQuestion')->param('answer', 'c')->param('questionId', $question->id)->param('end', $end);
             }
             if ($question->d_variant) {
                 $message .= "d) " . $question->d_variant . "\n";
-                $rows[] = Button::make('d')->action('answerQuestion')->param('answer', 'd')->param('questionId', $question->id)->param('chatId', $chatId);
+                $rows[] = Button::make('d')->action('answerQuestion')->param('answer', 'd')->param('questionId', $question->id)->param('end', $end);
             }
 
             if (empty($rows)) {
@@ -244,12 +266,13 @@ class TelegramHandler extends WebhookHandler
         }
     }
 
-    public function answerQuestion($questionId, $chatId, $answer)
+    public function answerQuestion($questionId, $answer, $end)
     {
         try {
-            $user = User::where('chat_id', $chatId)->first();
             $callbackQuery = request()->input('callback_query');
             $messageId = $callbackQuery['message']['message_id'] ?? null;
+            $chatId = $callbackQuery['message']['chat']['id'] ?? null;
+            $user = User::where('chat_id', $chatId)->first();
 
             if (!$user || $user->subscribe_date < date("Y-m-d")) {
                 $this->reply("Bo'limdan foydalanish uchun obuna sotib oling!");
@@ -275,15 +298,18 @@ class TelegramHandler extends WebhookHandler
 
             if (!$isCorrect) {
                 $user->update([
-                    'wrong_answers' => DB::raw('wrong_answers + 1'),
-                    'total' => DB::raw('total + 1'),
-                    'incorrect' => DB::raw('incorrect + 1'),
+                    'total' => $user->total += 1,
+                    'incorrect' => $user->incorrect += 1,
+                    'total_question' => $user->total_question += 1,
+                    'total_incorrect_answer' => $user->total_incorrect_answer += 1
                 ]);
                 $user->refresh();
             } else {
                 $user->update([
-                    'correct' => DB::raw('correct + 1'),
-                    'total' => DB::raw('total + 1'),
+                    'total' => $user->total += 1,
+                    'total_question' => $user->total_question += 1,
+                    'correct' => $user->correct += 1,
+                    'total_correct_answer' => $user->total_correct_answer += 1,
                 ]);
             }
             $message = "📝 $question->id - savol: " . $question->title . "\n\n\n";
@@ -342,40 +368,20 @@ class TelegramHandler extends WebhookHandler
                     ->send();
             }
 
-
-            if ($user->wrong_answers >= 3) {
-                $user->update([
-                    'page' => User::HOME_PAGE,
-                    'wrong_answers' => 0,
-                    'current_question_index' => 0
-                ]);
-                Telegraph::chat($chatId)->message("❌ Sizda noto'g'ri javoblar soni 3 taga yetdi, Iltimos, qaytadan urinib ko'ring!")
-                    ->send();
-                return;
-            }
-
             $currentIndex = $user->current_question_index + 1;
 
-            if ($currentIndex == 20) {
-                $user->update([
-                    'page' => User::TEST_COMPLETED,
-                    'current_question_index' => 0,
-                    'wrong_answers' => 0
-                ]);
-                Telegraph::chat($chatId)->message("🎉 Tabriklaymiz! Testni muvaffaqqiyatli tugatdingiz!")
-                    ->send();
-                return;
-            }
-
-            $nextQuestion = Test::skip($currentIndex)->first();
+            $nextQuestion = Test::skip($currentIndex)->where('id', '<=', $end)->first();
             if (!$nextQuestion) {
+                $msg = "🎉 Tabriklaymiz! $user->total ta testdan $user->correct ta to'g'ri, $user->incorrect ta noto'g'ri javob berdingingiz!";
+                Telegraph::chat($chatId)->message($msg)
+                    ->send();
                 $user->update([
                     'page' => User::TEST_COMPLETED,
                     'current_question_index' => 0,
-                    'wrong_answers' => 0
+                    'total' => 0,
+                    'incorrect' => 0,
+                    'correct' => 0
                 ]);
-                Telegraph::chat($chatId)->message("🎉 Tabriklaymiz! Testni muvaffaqqiyatli tugatdingiz!")
-                    ->send();
                 return;
             }
 
@@ -383,7 +389,7 @@ class TelegramHandler extends WebhookHandler
                 'current_question_index' => $currentIndex
             ]);
 
-            $this->sendQuestion($chatId, $nextQuestion, $currentIndex + 1);
+            $this->sendQuestion($chatId, $nextQuestion, $end);
         } catch (Exception $e) {
             Log::error("answerQuestion xatosi: " . $e->getMessage());
             Telegraph::message("Xatolik yuz berdi, iltimos keyinroq urinib ko'ring.")
