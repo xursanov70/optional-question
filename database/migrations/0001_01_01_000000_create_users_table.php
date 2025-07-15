@@ -19,7 +19,9 @@ return new class extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->boolean('active')->default(true);
-            $table->integer('page')->default(1);
+            $table->boolean('admin')->default(false);
+            $table->dateTime('payment_day')->nullable();
+            $table->string('page')->default('HOME');
             $table->rememberToken();
             $table->timestamps();
         });

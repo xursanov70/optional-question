@@ -2,66 +2,43 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\QuestionsImport;
-use App\Models\MakeTest;
+
 use App\Models\Question;
 use App\Models\Test;
-use App\Models\TestQuestion;
 use App\Models\User;
-use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
-use Exception;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Str;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Element\Text;
 use PhpOffice\PhpWord\Element\TextRun;
 
 class QuestionController extends Controller
 {
-    public function importData(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
-        ]);
-        try {
-            Excel::import(new QuestionsImport, $request->file('file'));
-
-            return response()->json(["message" => "Ma'lumotlar muvaffaqiyatli yuklandi!"], 200);
-        } catch (Exception $e) {
-            return response()->json([
-                "message" => "Dasturda xatolik",
-                "error" => $e->getMessage(),
-                "file" => $e->getFile(),
-                "line" => $e->getLine()
-            ]);
-        }
-    }
 
     public function questions()
     {
         $startNumber = request('start_number');
         $endNumber = request('end_number');
         $key = request('test_category');
-
         $chatId = request('chat_id');
 
-        // check_users jadvalida chat_id ni tekshirish
-        $userExists = DB::table('check_users')
-            ->where('chat_id', $chatId)
-            ->where('active', true)
-            ->exists();
+        $user = User::where('chat_id', $chatId)
+            ->first();
 
-        // Agar chat_id mavjud bo'lmasa, 404 sahifasini qaytarish
-        if (!$userExists && $chatId) {
-            abort(404, 'Foydalanuvchi topilmadi');
+        if (!$user) {
+            abort(404, 'User not found');
+        }
+        $oneMonthAgo = Carbon::now()->subMonth();
+
+        if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
+            return view("payment-day");
+            // abort(404, 'Not found – Payment date is older than 1 month');
         }
 
         $questions = Question::where('key', $key)
+            ->where('chat_id', $chatId)
             ->where('test_number', '>=', $startNumber)
             ->where('test_number', '<=', $endNumber)
             ->get();
@@ -87,85 +64,12 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function exportExcelData()
+    public function showTestForm()
     {
-        $questions = Question::where('key', 'k_docx')
-            ->get();
-        $writer = WriterEntityFactory::createXLSXWriter();
-        $filePath = 'storage/reports/' . date('Y_m_d_H_i_s') . 'report.xlsx';
-        $writer->openToFile($filePath);
-        $writer->addRow(WriterEntityFactory::createRowFromArray([
-            'title',
-            'a_variant',
-            'b_variant',
-            'c_variant',
-            'd_variant',
-            'correct_answer',
-            'test_number',
-            'key',
-        ]));
-        $data = [];
+        $chatId = request("chat_id");
+        $testNames = DB::table('test_names')->where('chat_id', $chatId)->where('active', true)->pluck('test_name');
 
-        foreach ($questions as $question) {
-            $data[] = [
-                'title' => $question->title,
-                'a_variant' => $question->a_variant,
-                'b_variant' => $question->b_variant,
-                'c_variant' => $question->c_variant,
-                'd_variant' => $question->d_variant,
-                'correct_answer' => $question->correct_answer,
-                'test_number' => $question->test_number,
-                'key' => $question->key,
-            ];
-        }
-        foreach ($data as $row) {
-            $rowFromValues = WriterEntityFactory::createRowFromArray($row);
-            $writer->addRow($rowFromValues);
-        }
-        $writer->close();
-        return $filePath;
-    }
-
-
-    public function run()
-    {
-        $questions = [
-            [
-                'title' => 'Quyida keltirilgan kompyuter tarmoqlarining qaysi biri avval paydo bo’lgan?',
-                'correct_answer_text' => 'Wide Area Network',
-            ],
-            [
-                'title' => 'To’rtta bir-biri bilan bog’langan bog’lamlar strukturasi (kvadrat shaklida) qaysi topologiya turiga mansub?',
-                'correct_answer_text' => 'Xalqa',
-            ],
-        ];
-
-        foreach ($questions as $question) {
-            $correct_answer_index = rand(0, 3); // Tog'ri javob uchun indeks tanlash
-
-            // Fake variantlar yaratish
-            $fake_answers = [
-                Str::random(10),
-                Str::random(10),
-                Str::random(10),
-                $question['correct_answer_text'],
-            ];
-
-            shuffle($fake_answers); // Variantlarni aralashtirish
-
-            // Tog'ri javobni aniqlash
-            $correct_answer = ['a', 'b', 'c', 'd'][$correct_answer_index];
-
-            // Ma'lumotni jadvalga kiritish
-            DB::table('test_questions')->insert([
-                'title' => $question['title'],
-                'a_variant' => $fake_answers[0],
-                'b_variant' => $fake_answers[1],
-                'c_variant' => $fake_answers[2],
-                'd_variant' => $fake_answers[3],
-                'correct_answer' => $correct_answer,
-            ]);
-        }
+        return view('home', compact('testNames'));
     }
 
 
@@ -218,7 +122,7 @@ class QuestionController extends Controller
                     ]);
 
                     $data['question'] = $line;
-                    $testCounter++; 
+                    $testCounter++;
                 } elseif (preg_match('/^a\)/', $line)) {
                     $line = substr($line, 3);
                     $test = Test::whereNull('a_variant')->first();
@@ -270,6 +174,4 @@ class QuestionController extends Controller
             return 'ok';
         }
     }
-
-
 }

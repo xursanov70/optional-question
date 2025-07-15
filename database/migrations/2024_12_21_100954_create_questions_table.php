@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('c_variant')->nullable();
             $table->string('d_variant')->nullable();
             $table->string('correct_answer')->nullable();
+            $table->string('chat_id')->nullable();
             $table->string('key')->nullable();
             $table->integer('test_number')->nullable();
             $table->boolean('active')->default(true);

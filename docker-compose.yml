@@ -1,6 +1,6 @@
 services:
   app:
-    image: xursanov70/question-test:v1.0
+    image: xursanov70/build-your-test:v1.2
     container_name: laravel_app
     volumes:
       - laravel_data:/var/www
@@ -8,12 +8,13 @@ services:
       - .env
     networks:
       - laravel_network
+    restart: unless-stopped # Added restart policy
 
   web:
     image: nginx:latest
     container_name: laravel_web
     ports:
-      - "8000:80"
+      - "8010:80"
     volumes:
       - laravel_data:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
@@ -21,6 +22,7 @@ services:
       - app
     networks:
       - laravel_network
+    restart: unless-stopped # Added restart policy
 
   jprq:
     image: alpine:latest
@@ -30,12 +32,13 @@ services:
              curl -fsSL https://jprq.io/install.sh | sh &&
              /usr/local/bin/jprq --version &&
              /usr/local/bin/jprq auth wDqSutIj03Cq8P2nTjfg2wprWS0CfH23HeyN &&
-             exec /usr/local/bin/jprq http 8000 -s testbot"
+             exec /usr/local/bin/jprq http 8010 -s build-your-test"
     env_file:
       - .env
     depends_on:
       - web
     network_mode: host # Tashqi 8000-portga ulanish uchun
+    restart: unless-stopped # Added restart policy
 
 networks:
   laravel_network:

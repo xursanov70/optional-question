@@ -15,6 +15,7 @@ class Question extends Model
         'd_variant',
         'correct_answer',
         'key',
+        'chat_id',
         'test_number',
         'active'
     ];

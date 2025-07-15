@@ -12,9 +12,12 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
-    const ADD_RULE_PAGE = 2;
-    const HOME_PAGE = 1;
-    const REMOVE_RULE_PAGE = 3;
+    const HOME_PAGE = "HOME";
+    const ENTER_TEST_NAME = "ENTER_TEST_NAME";
+    const PREPARING_TEST = "PREPARING_TEST";
+    const MAKE_TEST = "MAKE_TEST";
+    const ADD_RULE = "ADD_RULE";
+    const REMOVE_RULE = "REMOVE_RULE";
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +29,7 @@ class User extends Authenticatable
         'username',
         'first_name',
         'last_name',
+        'payment_day',
         'chat_id',
         'active',
         'page'

@@ -38,8 +38,24 @@
                 </div>
             </div>
 
-            <!-- Category Buttons -->
+            <!-- Kategoriyalar ro'yxati test_names dan dinamik chiqariladi -->
             <div class="flex flex-col space-y-4">
+                <label class="text-base sm:text-lg font-medium text-gold-light">Kategoriyani tanlang:</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    @foreach($testNames as $testName)
+                        <button type="button"
+                            onclick="selectCategory('{{ $testName }}')"
+                            class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center"
+                            data-category="{{ $testName }}">
+                            <span class="text-sm sm:text-base">{{ ucwords(str_replace('_', ' ', $testName)) }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+
+            <!-- Category Buttons -->
+            {{-- <div class="flex flex-col space-y-4">
                 <label class="text-base sm:text-lg font-medium text-gold-light">Kategoriyani tanlang:</label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button type="button" onclick="selectCategory('iqtisodiy_talim')" class="category-btn px-4 py-3 bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-dark hover:to-gold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center" data-category="iqtisodiy_talim">
@@ -58,7 +74,7 @@
                         <span class="text-sm sm:text-base">Iqtisodiy rivojlanish</span>
                     </button>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Hidden input for category -->
             <input type="hidden" name="category" id="categoryInput" required>

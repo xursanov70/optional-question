@@ -12,8 +12,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libsqlite3-dev \
+    sqlite3 \
     && docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* # Keshni tozalash
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer o'rnatish
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -43,6 +44,12 @@ RUN composer install --optimize-autoloader --no-dev \
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www \
     && chmod -R 775 /var/www/storage /var/www/database
+
+# Set the entrypoint script
+COPY ./.docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 
 # PHP-FPM porti
 EXPOSE 9000
