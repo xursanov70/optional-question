@@ -83,12 +83,15 @@
     <script>
         let questions = @json($questions);
         let correctAnswers = @json($correctAnswers);
+        let chatId = @json($chatId);
         let userAnswers = {};
 
         function checkAnswer(input) {
             const questionDiv = input.closest('div').parentElement;
             const feedbackDiv = questionDiv.querySelector('div[id^="feedback_"]');
-            const questionId = input.name.split('_')[1];
+            // const questionId = input.name.split('_')[1];
+            const questionId = parseInt(input.name.split('_')[1]);
+
             const correctAnswer = correctAnswers[questionId];
 
             userAnswers[questionId] = input.value;
@@ -151,7 +154,7 @@
         }
 
         function goToHomePage() {
-            window.location.href = '/'; // Adjust this URL if your home page is different
+            window.location.href = '/?chat_id=' + encodeURIComponent(chatId);
         }
 
         function setTheme(theme) {

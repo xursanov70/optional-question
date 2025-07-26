@@ -30,15 +30,20 @@ class QuestionController extends Controller
         if (!$user) {
             abort(404, 'User not found');
         }
-        $oneMonthAgo = Carbon::now()->subMonth();
+        if ($key != "xursanov70") {
+            $oneMonthAgo = Carbon::now()->subMonth();
 
-        if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
-            return view("payment-day");
-            // abort(404, 'Not found – Payment date is older than 1 month');
+            if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
+                return view("payment-day");
+            }
         }
+        $keyXursanov = $key == "xursanov70" ? true : false;
+       
+        $universalId = $keyXursanov ? env('XURSANOV_70_CHAT_ID') : $chatId;
+
 
         $questions = Question::where('key', $key)
-            ->where('chat_id', $chatId)
+            ->where('chat_id', $universalId)
             ->where('test_number', '>=', $startNumber)
             ->where('test_number', '<=', $endNumber)
             ->get();
@@ -61,6 +66,7 @@ class QuestionController extends Controller
         return view('questions', [
             'questions' => $questions,
             'correctAnswers' => $correctAnswers,
+            'chatId' => $chatId
         ]);
     }
 
@@ -173,5 +179,25 @@ class QuestionController extends Controller
 
             return 'ok';
         }
+    }
+
+    public function uploadVideo(Request $request)
+    {
+        // 1. File borligini tekshiramiz
+        if (!$request->hasFile('file')) {
+            return response()->json(['error' => 'Fayl yuklanmadi!'], 400);
+        }
+
+        $file = $request->file('file');
+
+        // 2. Fayl mp4 ekanligini tekshiramiz
+        if ($file->getClientOriginalExtension() !== 'mp4') {
+            return response()->json(['error' => 'Faqat mp4 fayllar qabul qilinadi!'], 400);
+        }
+
+        // 3. Saqlash
+        $path = $file->storeAs('public/documents', 'manual.mp4', 'public');
+
+        return response()->json(['success' => 'Video yuklandi', 'path' => $path]);
     }
 }

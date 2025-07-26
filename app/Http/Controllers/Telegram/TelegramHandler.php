@@ -37,11 +37,16 @@ class TelegramHandler extends WebhookHandler
         }
         $url = env('APP_URL');
         $admin = $user->admin ? true : false;
+        $storagePath = "public/documents/manual.mp4";
+        $localPath = Storage::disk('public')->path($storagePath);
+
+
 
         $this->chat->message('Assalamu alaykum ' . $firstName . ', Botimizga xush kelibsiz!')
             ->replyKeyboard(
                 ReplyKeyboard::make()
                     ->button("To'lov 💳")
+                    ->button("Qo'llanma ⭐️")
                     ->button("Admin bilan aloqa 📞")
                     ->button("Test yaratish 📕")
                     ->button("Bosh sahifa 🏠")
@@ -52,6 +57,15 @@ class TelegramHandler extends WebhookHandler
                     ->inputPlaceholder("Assalamu alaykum...")
                     ->resize()
             )->send();
+
+        if (Storage::disk('public')->exists($storagePath)) {
+            $message = "Botdan foydalanish uchun qo'llanma: \n\nTest yechish bo'limida sinov uchun test yechib ko'ring va agar yoqsa o'zingiz uchun test yarating.\n\n1. O'zingiz uchun test yarating. \n2. Test yaratishda testlar yozilgan 'Test yaratish' bo'limida ko'rsatilgan sun'iy intelekt yordamida formatlab oling \n3. Formatlangan faylni bizga yuboring \n4. Biz siz yuborgan testlarni siz uchun 'Test yechish' bo'limida onlayn test ko'rinishida taqdim etamiz";
+            Telegraph::chat($chatId)
+                ->video($localPath)
+                ->message($message)
+                ->send();
+            return;
+        }
     }
 
 
@@ -82,6 +96,10 @@ class TelegramHandler extends WebhookHandler
                 $this->makeTest($chatId, $this->message->document());
                 break;
             case User::ENTER_TEST_NAME:
+                if (!$this->check($text)){
+                    Telegraph::chat($chatId)->message("Iltimos, Test uchun nom kiriting!")->send();
+                    return;
+                }
                 $this->verifyTestName($chatId, $text);
                 break;
             case User::ADD_RULE:
@@ -94,6 +112,9 @@ class TelegramHandler extends WebhookHandler
                 switch ($text) {
                     case "To'lov 💳":
                         $this->sendInfo($chatId);
+                        break;
+                    case "Qo'llanma ⭐️":
+                        $this->manual($chatId);
                         break;
                     case "Admin bilan aloqa 📞":
                         $this->contactAdmin($chatId);
@@ -110,6 +131,29 @@ class TelegramHandler extends WebhookHandler
                 }
                 break;
         }
+    }
+
+    public function check($text){
+        if ($text == "To'lov 💳" || $text == "Qo'llanma ⭐️" || $text == "Admin bilan aloqa 📞" || $text == "Test yaratish 📕" || $text == "Huquq berish 🔐" || $text == "Huquq olish 🔒"){
+            return false;
+        }
+        return true;
+    }
+
+    private function manual($chatId)
+    {
+        $storagePath = "public/documents/manual.mp4";
+        $localPath = Storage::disk('public')->path($storagePath);
+
+        $message = "Botdan foydalanish uchun qo'llanma: \n\nTest yechish bo'limida sinov uchun test yechib ko'ring va agar yoqsa o'zingiz uchun test yarating.\n\n1. O'zingiz uchun test yarating. \n2. Test yaratishda testlar yozilgan 'Test yaratish' bo'limida ko'rsatilgan sun'iy intelekt yordamida formatlab oling \n3. Formatlangan faylni bizga yuboring \n4. Biz siz yuborgan testlarni siz uchun 'Test yechish' bo'limida onlayn test ko'rinishida taqdim etamiz";
+        if (!Storage::disk('public')->exists($storagePath)) {
+            Telegraph::chat($chatId)
+                ->message($message)
+                ->send();
+            return;
+        }
+
+        Telegraph::chat($chatId)->message($message)->video($localPath)->send();
     }
 
     private function manageRule($chatId, $userChatId, $addRule)
@@ -149,6 +193,17 @@ class TelegramHandler extends WebhookHandler
 
     private function verifyTestName($chatId, $testName)
     {
+        if (strpos($testName, ' ') !== false) {
+        Telegraph::chat($chatId)
+            ->message("Iltimos, test nomida bo'shliq ishlatmang. Masalan: test_nomi yoki test1 kabi.")
+            ->send();
+        return;
+    }
+        $oldTestName = TestName::where('chat_id', $chatId)->where('active', true)->where('test_name', $testName)->first();
+        if ($oldTestName) {
+            Telegraph::chat($chatId)->message("Sizda $testName nomli test mavjud iltimos boshqa nom kiriting:")->send();
+            return;
+        }
         $keyboard = Keyboard::make()->row([
             Button::make('Ha ✅')->action('verify')->param('verify', 'yes')->param('chatId', $chatId)->param("testName", $testName),
             Button::make("Yo'q ❌")->action('verify')->param('verify', 'no')->param('chatId', $chatId)->param("testName", $testName)
@@ -187,14 +242,14 @@ class TelegramHandler extends WebhookHandler
     {
         $username = env('USERNAME_TELEGRAM');
         $paymentSum = env('PAYMENT_SUM');
-        $message = "Iltimos, ushbu 👉 $chatId 👈 chat ID raqamingizni va $paymentSum so'm to'lov qilinganlik haqida screenshotni  $username akkauntiga yuboring!";
+        $message = "To'lov summasi $paymentSum so'm. To'lov qilish uchun $username profiliga 👉 $chatId 👈 ushbu ID raqamingizni yuboring!";
         Telegraph::chat($chatId)->message($message)->send();
     }
 
     private function contactAdmin($chatId)
     {
         $username = env('USERNAME_TELEGRAM');
-        $message = "Iltimos, admin bilan bog'lanish uchun $username akkauntiga murojaat qiling!";
+        $message = "Iltimos, admin bilan bog'lanish uchun $username profiliga murojaat qiling!";
         Telegraph::chat($chatId)->message($message)->send();
     }
 
@@ -206,8 +261,13 @@ class TelegramHandler extends WebhookHandler
             "active" => false
         ]);
         $message = "Iltimos, quyidagi struktura bo'yicha testlar yozilgan faylni yuboring!";
-        $structuraMessage = "1) Savollar fayli docx formatda bo'lsin \n 2) Har bir savolning oxirida ? so'roq belgisi bo'lsin \n 3) Har bir variantnig boshlanish qismi A) yoki a) variant harfi va qavs belgisi bo'lsin \n 4) Har vir savolning oxirida to'g'ri javob Javob: A yoki Javob: a ko'rinisha bo'lsin";
-        $example = "Apple so'zining ma'nosi nima? \n\n A) olma \n B) nok \n C) behi \n D) uzum \n\n Javob: A";
+        $message = "Iltimos, https://chatgpt.com ushbu sun'iy intelekt saytiga kirib, testlar yozilgan faylingizni va pastdagi tekstni yuboring\n Bu testlar yozilgan faylni formatlab beradi\nBizga formatlangan faylni yuboring";
+        $structuraMessage = "You put a question mark '?' at the end of each question in this file,
+you mark each question option as A), B), C) and D) and each question option should be written on a new line,
+you mark each correct answer on a new line as Javob: A, Javob: B, Javob: C and Javob: D,
+if there are no question options, create a fake one and send it to me as a docx file";
+        // $structuraMessage = "1) Savollar fayli docx formatda bo'lsin \n 2) Har bir savolning oxirida ? so'roq belgisi bo'lsin \n 3) Har bir variantnig boshlanish qismi A) yoki a) variant harfi va qavs belgisi bo'lsin \n 4) Har vir savolning oxirida to'g'ri javob Javob: A yoki Javob: a ko'rinisha bo'lsin";
+        $example = "Savollar ushbu ko'rinishda bo'lishi kerak: \n\n Apple so'zining ma'nosi nima? \n\n A) olma \n B) nok \n C) behi \n D) uzum \n\n Javob: A";
         $warning = "Eslatib o'tamiz, savollar quyidagi tartibda bo'lmasa, savol va to'g'ri javoblar aralashib ketishi mumkin!";
         Telegraph::chat($chatId)->message($message)->send();
         Telegraph::chat($chatId)->message($structuraMessage)->send();
@@ -282,14 +342,6 @@ class TelegramHandler extends WebhookHandler
             Telegraph::chat($chatId)
                 ->message("Test yechish bo'limida ko'rsangiz bo'ladi!")
                 ->send();
-
-            $oneMonthAgo = Carbon::now()->subMonth();
-            $user = User::where('chat_id', $chatId)
-                ->first();
-
-            if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
-                Telegraph::chat($chatId)->message("Test yechish uchun to'lov qilishingiz kerak!")->send();
-            }
 
             $this->updateUserPage($chatId, User::HOME_PAGE);
         } catch (\Exception $e) {
@@ -424,7 +476,7 @@ class TelegramHandler extends WebhookHandler
                 }
                 $data['d_variant'] = $line;
             } elseif (strpos($line, "Javob: ") === 0) {
-                $answer = trim(substr($line, strlen("Javob: ")));
+                $answer = strtolower(substr(trim($line), strlen("Javob: "), 1));
                 $test = Question::whereNull('correct_answer')->first();
                 if ($test) {
                     $test->update([
