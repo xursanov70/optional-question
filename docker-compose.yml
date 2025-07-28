@@ -1,6 +1,6 @@
 services:
   app:
-    image: xursanov70/build-your-test:v1.2
+    image: xursanov70/build-your-test:1.0.2
     container_name: laravel_app
     volumes:
       - laravel_data:/var/www

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Models\Test;
+use App\Models\TestName;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -31,14 +32,16 @@ class QuestionController extends Controller
             abort(404, 'User not found');
         }
         if ($key != "xursanov70") {
-            $oneMonthAgo = Carbon::now()->subMonth();
-
-            if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
-                return view("payment-day");
+            $testNameCount = TestName::where('chat_id', $chatId)->where('active', true)->count();
+            if ($testNameCount > 1) {
+                $oneMonthAgo = Carbon::now()->subMonth();
+                if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
+                    return view("payment-day");
+                }
             }
         }
         $keyXursanov = $key == "xursanov70" ? true : false;
-       
+
         $universalId = $keyXursanov ? env('XURSANOV_70_CHAT_ID') : $chatId;
 
 
