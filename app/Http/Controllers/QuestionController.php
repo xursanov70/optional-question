@@ -24,6 +24,8 @@ class QuestionController extends Controller
         $endNumber = request('end_number');
         $key = request('test_category');
         $chatId = request('chat_id');
+        $testNameId = request('test_name_id');
+        Log::info($testNameId);
 
         $user = User::where('chat_id', $chatId)
             ->first();
@@ -32,21 +34,22 @@ class QuestionController extends Controller
             abort(404, 'User not found');
         }
         if ($key != "xursanov70") {
-            $testNameCount = TestName::where('chat_id', $chatId)->where('active', true)->count();
-            if ($testNameCount > 1) {
+            $freeTest = TestName::where('chat_id', $chatId)->where('id', $testNameId)->where('free', true)->first();
+            if (!$freeTest) {
                 $oneMonthAgo = Carbon::now()->subMonth();
                 if (Carbon::parse($user->payment_day)->lt($oneMonthAgo) || $user->payment_day == null) {
                     return view("payment-day");
                 }
             }
         }
-        $keyXursanov = $key == "xursanov70" ? true : false;
+        // $keyXursanov = $key == "xursanov70" ? true : false;
 
-        $universalId = $keyXursanov ? env('XURSANOV_70_CHAT_ID') : $chatId;
+        // $universalId = $keyXursanov ? env('XURSANOV_70_CHAT_ID') : $chatId;
 
 
-        $questions = Question::where('key', $key)
-            ->where('chat_id', $universalId)
+        $questions = Question::
+        where('test_name_id', $testNameId)
+            ->where('chat_id', $chatId)
             ->where('test_number', '>=', $startNumber)
             ->where('test_number', '<=', $endNumber)
             ->get();
@@ -76,7 +79,7 @@ class QuestionController extends Controller
     public function showTestForm()
     {
         $chatId = request("chat_id");
-        $testNames = DB::table('test_names')->where('chat_id', $chatId)->where('active', true)->pluck('test_name');
+        $testNames = DB::table('test_names')->where('chat_id', $chatId)->where('active', true)->pluck('test_name', 'id');
 
         return view('home', compact('testNames'));
     }

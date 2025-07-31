@@ -18,15 +18,15 @@
             font-family: Arial, sans-serif;
         }
 
-        h2 {
+        h4 {
             font-size: 1.8rem;
             padding: 0 1rem;
         }
     </style>
 </head>
 <body>
-    <h2>
-        Iltimos, oylik to'lov summasini to'lang!
-    </h2>
+    <h4>
+        Iltimos, botdan foydalanish uchun oylik to'lov summasini to'lang!
+    </h4>
 </body>
 </html>

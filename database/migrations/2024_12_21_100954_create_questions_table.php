@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('test_name_id')->constrained('test_names')->cascadeOnDelete();
             $table->string('title')->nullable();
             $table->string('a_variant')->nullable();
             $table->string('b_variant')->nullable();

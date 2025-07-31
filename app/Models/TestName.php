@@ -9,6 +9,7 @@ class TestName extends Model
     protected $fillable = [
         "test_name",
         "chat_id",
-        "active"
+        "active",
+        "free"
     ];
 }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string("test_name");
             $table->string("chat_id");
             $table->boolean("active")->default(false);
+            $table->boolean("free");
             $table->timestamps();
         });
     }

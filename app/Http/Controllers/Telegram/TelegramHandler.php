@@ -96,7 +96,7 @@ class TelegramHandler extends WebhookHandler
                 $this->makeTest($chatId, $this->message->document());
                 break;
             case User::ENTER_TEST_NAME:
-                if (!$this->check($text)){
+                if (!$this->check($text)) {
                     Telegraph::chat($chatId)->message("Iltimos, Test uchun nom kiriting!")->send();
                     return;
                 }
@@ -133,8 +133,9 @@ class TelegramHandler extends WebhookHandler
         }
     }
 
-    public function check($text){
-        if ($text == "To'lov 💳" || $text == "Qo'llanma ⭐️" || $text == "Admin bilan aloqa 📞" || $text == "Test yaratish 📕" || $text == "Huquq berish 🔐" || $text == "Huquq olish 🔒"){
+    public function check($text)
+    {
+        if ($text == "To'lov 💳" || $text == "Qo'llanma ⭐️" || $text == "Admin bilan aloqa 📞" || $text == "Test yaratish 📕" || $text == "Huquq berish 🔐" || $text == "Huquq olish 🔒") {
             return false;
         }
         return true;
@@ -145,7 +146,7 @@ class TelegramHandler extends WebhookHandler
         $storagePath = "public/documents/manual.mp4";
         $localPath = Storage::disk('public')->path($storagePath);
 
-        $message = "Botdan foydalanish uchun qo'llanma: \n\nTest yechish bo'limida sinov uchun test yechib ko'ring va agar yoqsa o'zingiz uchun test yarating.\n\n1. O'zingiz uchun test yarating. \n2. Test yaratishda testlar yozilgan 'Test yaratish' bo'limida ko'rsatilgan sun'iy intelekt yordamida formatlab oling \n3. Formatlangan faylni bizga yuboring \n4. Biz siz yuborgan testlarni siz uchun 'Test yechish' bo'limida onlayn test ko'rinishida taqdim etamiz";
+        $message = "Botdan foydalanish uchun qo'llanma: \n\n🪄 Test yaratish bo'limida bir martalik bepul test yarating\n🛎 Test yechish bo'limida testlarni bajarib ko'ring va agar ma'qul kelsa botga to'lov qilib botdan to'liq foydalanish huquqini oling.\n\n1. O'zingiz uchun test yarating. \n2. Test yaratishda testlar yozilgan 'Test yaratish' bo'limida ko'rsatilgan sun'iy intelekt yordamida formatlab oling \n3. Formatlangan faylni bizga yuboring \n4. Biz siz yuborgan testlarni siz uchun 'Test yechish' bo'limida onlayn test ko'rinishida taqdim etamiz";
         if (!Storage::disk('public')->exists($storagePath)) {
             Telegraph::chat($chatId)
                 ->message($message)
@@ -194,14 +195,14 @@ class TelegramHandler extends WebhookHandler
     private function verifyTestName($chatId, $testName)
     {
         if (strpos($testName, ' ') !== false) {
-        Telegraph::chat($chatId)
-            ->message("Iltimos, test nomida bo'shliq ishlatmang. Masalan: test_nomi yoki test1 kabi.")
-            ->send();
-        return;
-    }
+            Telegraph::chat($chatId)
+                ->message("Iltimos, test nomida bo'shliq ishlatmang. Masalan: test_nomi yoki test1 kabi")
+                ->send();
+            return;
+        }
         $oldTestName = TestName::where('chat_id', $chatId)->where('active', true)->where('test_name', $testName)->first();
         if ($oldTestName) {
-            Telegraph::chat($chatId)->message("Sizda $testName nomli test mavjud iltimos boshqa nom kiriting:")->send();
+            Telegraph::chat($chatId)->message("Sizda $testName nomli test mavjud. Iltimos boshqa nom kiriting:")->send();
             return;
         }
         $keyboard = Keyboard::make()->row([
@@ -255,10 +256,12 @@ class TelegramHandler extends WebhookHandler
 
     private function createTest($chatId, $testName)
     {
+
         TestName::create([
             "chat_id" => $chatId,
             "test_name" => $testName,
-            "active" => false
+            "active" => false,
+            "free" => false
         ]);
         $message = "Iltimos, quyidagi struktura bo'yicha testlar yozilgan faylni yuboring!";
         $message = "Iltimos, https://chatgpt.com ushbu sun'iy intelekt saytiga kirib, testlar yozilgan faylingizni va pastdagi tekstni yuboring\n Bu testlar yozilgan faylni formatlab beradi\nBizga formatlangan faylni yuboring";
@@ -327,7 +330,7 @@ if there are no question options, create a fake one and send it to me as a docx 
 
             $localPath = Storage::disk('public')->path($storagePath);
 
-            $this->importWordFile(new \SplFileObject($localPath), $chatId, $name);
+            $this->importWordFile(new \SplFileObject($localPath), $chatId, $testName);
             $testName->update([
                 "active" => true
             ]);
@@ -397,6 +400,8 @@ if there are no question options, create a fake one and send it to me as a docx 
             ->message('Yuklash jarayoni boshlandi...')
             ->send();
 
+        $name = $testName->test_name ?? "test";
+
         $filePath = $file->getPathname();
         $phpWord = IOFactory::load($filePath);
         $text = '';
@@ -434,7 +439,8 @@ if there are no question options, create a fake one and send it to me as a docx 
                     'title' => $line,
                     'chat_id' => $chatId,
                     'test_number' => $testCounter,
-                    'key' => $testName
+                    'key' => $name,
+                    'test_name_id' => $testName->id
                 ]);
 
                 $data['question'] = $line;
@@ -487,7 +493,11 @@ if there are no question options, create a fake one and send it to me as a docx 
             }
         }
 
-        return 'ok';
-        // }
+        $testNameCount = TestName::where('chat_id', $chatId)->where('active', true)->count();
+        if ($testNameCount < 1) {
+            TestName::where('id', $testName->id)->update([
+                'free' => true
+            ]);
+        }
     }
 }

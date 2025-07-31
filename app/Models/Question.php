@@ -17,6 +17,7 @@ class Question extends Model
         'key',
         'chat_id',
         'test_number',
-        'active'
+        'active',
+        'test_name_id'
     ];
 }
